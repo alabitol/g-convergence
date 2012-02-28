@@ -1,0 +1,26 @@
+author:  Martin Dluhos
+created: February 21, 2012 
+revised: February 27, 2012
+
+Questions:
+
+How are we going to implement processing requests from the Convergence
+clients which connect to the notary server?
+
+We will use pthreads.
+
+Can C work with SQL database? Which one do we want to use? Which libraries
+does C provide that we could use?
+
+Yes, C does work with SQL database. Tentatively, We are going to use sqlite
+which should be relatively easy to work with. 
+
+Next steps:
+
+* Set up a Git repository
+* Learn more about pthreads.
+* Find a sqlite database library for C
+
+
+
+     
