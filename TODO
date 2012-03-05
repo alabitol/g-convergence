@@ -1,26 +1,60 @@
 author:  Martin Dluhos
 created: February 21, 2012 
-revised: February 27, 2012
+revised: February 29, 2012
 
 Questions:
 
-How are we going to implement processing requests from the Convergence
-clients which connect to the notary server?
+The notary needs to receive the url of the site to verify and the fingerprint
+of the certificate. What is the exact format in which the notary receives this data?
 
-We will use pthreads.
+The plan:
 
-Can C work with SQL database? Which one do we want to use? Which libraries
-does C provide that we could use?
+* Identify the most essential components of the project and create C files
+  which correspond to those components. Describe the purpose of each C file in
+  the project.
+* Since a web server forms the core of the software, identify an appropriate
+  library that provides the needed web functionality. Learn how to use this
+  library for the project.
+* Identify data structures to represent the data being processed by the
+  program.
+* Write some integration tests to test the functionality of the entire program.
+* Since we decided to use top-down approach, write function stubs  that
+  represent the distinct steps in the verification process. Identify
+  functionality needed by those functions that might already be implemented in
+  a C library. For example, since we decided to include a cache in the
+  prototype, we need to find an appropriate database to store the cached
+  fingerprints. Thus, we probably need to look for an mysql C library.
+* Write unit tests to test the identified higher order functions. This could
+  be done simultaneously if those developing tests and those implementing the 
+  functions are different people or different groups. 
+* Write a basic implementation of these higher order functions to create a
+  functioning prototype of the program. 
+* When a new (helper) function needs to be written, write only the prototype 
+  first. Then write unit tests for this function and only after writing the
+  tests implement the function.
+* Once the prototype is implemented and passing all tests, identify extensions
+  to the prototype which can be added. Refer to the project proposal for
+  suggested extensions. Follow a similar development process
+  with these extensions as with the prototype.
 
-Yes, C does work with SQL database. Tentatively, We are going to use sqlite
-which should be relatively easy to work with. 
+Log:
 
-Next steps:
+Initially, we were going to implement the web server portion of our notary
+ourselves using by using sockets and pthread. After a while, it became
+apparent that we would be duplicating a lot of functionality that has
+already been implemented before and is available for use via a C
+library. After a little bit of searching we found that libcrohttpd provides
+exactly what we are looking for. Thus, we decided to use this library in our
+project to provide the functionality of a web server. 
 
-* Set up a Git repository
-* Learn more about pthreads.
-* Find a sqlite database library for C
+First, we proceeded to learn about how to use this library by proceeding
+through tutorial available at 
 
+www.gnu.org/software/libmicrohttpd/tutorial.html
 
+After learning about libmicrohttpd from the tutorial, we began writing
+stubs of the most high-level functions that we need to provide the essential
+functionality of the Convergence server.
 
-     
+We also found it useful to create a UML diagram to help us visualize the
+role of various components in the project and the interactions between them.
