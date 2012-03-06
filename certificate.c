@@ -16,13 +16,6 @@ request_certificate ()
   return 1;
 }
 
-/* Receives certificate that it requested from the website. */
-int 
-receive_certificate ()
-{
-  return 1;
-}
-
 /* Verifies that the received certificate from the website matches with the
  * fingerprint from the user.
  */
