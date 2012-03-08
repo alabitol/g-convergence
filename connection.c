@@ -14,6 +14,9 @@
 #define GET 0
 #define POST 1
 
+/* Keep track of the number of clients with active requests. */
+unsigned int num_active_clients = 0;
+
 const char *busy_page = "The server is too busy to handle the verification request.";
 const char *unsupported_method_page = "The server received a request with unsupported method."
 

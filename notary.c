@@ -15,9 +15,6 @@
 #include "certificate.h"
 #include "response.h"
 
-/* Keep track of the number of clients with active requests. */
-unsigned int num_active_clients = 0;
-
 /* Begins logging of server activity to a log file. 
  * IMPLEMENT LATER.
  */

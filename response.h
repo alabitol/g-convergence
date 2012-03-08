@@ -8,14 +8,35 @@
  * Description: This file contains functions which format the verification
  * response and functions which send the response back to the client.
  ******************************************************************************/
+#include <stdint.h>
+#include <stdarg.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <microhttpd.h>
+#include <stdlib.h>
+#include <stdio.h>
 
-/* Formats the response that needs to be sent back to the client. */
+/* Obtains a response for a POST request
+ */
 int 
-format_response ();
+retrieve_post_response (void *coninfo_cls, enum MHD_ValueKind kind, 
+                        const char *key, const char *filename, 
+                        const char *content_type, const char *transfer_encoding,
+                        const char *data, uint64_t off, size_t size);
 
-/* Sends response back to the client. This function could be a wrapper for
- * send_page.
+
+
+/* Obtains a response for a GET request
  */
 int
-send_response ();
+retrieve_get_response (void *coninfo_cls, char *url);
 
+
+
+/* Sends the processed response back to the client
+ */
+int
+send_response (struct MHD_Connection *connection, const char *page,
+               int status_code);
