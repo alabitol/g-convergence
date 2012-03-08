@@ -18,17 +18,6 @@
 /* Keep track of the number of clients with active requests. */
 unsigned int num_active_clients = 0;
 
-/* This is our primary datasructure for storing requests that arrive from
- * clients. Each request will contain a URL of the host to be verified. If the
- * client is sending a GET request, then there is no fingerprint to compare. 
- * Otherwise, it is a POST request which has to include the fingerprint.
- */ 
-struct ClientRequest
-{
-  char *url;
-  char *fingerprint;
-}
-
 /* Begins logging of server activity to a log file. 
  * IMPLEMENT LATER.
  */
@@ -119,6 +108,10 @@ int main (int argc, char *argv[])
    * NULL: additional arguments to preceding param
    * &answer_to_connection: call this function to handle a new connection
    * NULL: arguments to answer_to_connection,
+   * MHD_OPTION_NOTIFY_COMPLETED: indicate that request_completed is
+   * registered
+   * request_completed: function to call when a request completes
+   * NULL: arguments to the request_completed function
    * MHD_OPTION_END: indicate that there are no more options
    */
   daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION, 
