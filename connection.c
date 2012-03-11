@@ -60,28 +60,9 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
      * method.
      */
     if  (strcmp (method, "POST") == 0)
-    {
-      /* We need to create a post processor which retrieves a response to the
-       * client. This saves response attributes to con_info
-       */
-      con_info->post_processor =
-	MHD_create_post_processor (connection, POST_BUFFER_SIZE,
-	    retrieve_post_response, (void *) con_info);
-
-      if (con_info->post_processor == NULL)
-      {
-	free (con_info);
-	return MHD_NO;
-      }
-      else
-      {
-	con_info->connection_type = POST;
-      }
-    }
+      con_info->connection_type = POST;
     else if (strcmp (method, "GET") == 0)
-      {
-        con_info->connection_type = GET;
-      }
+      con_info->connection_type = GET;
     
     number_active_clients++;
     *con_cls = (void *) con_info;
