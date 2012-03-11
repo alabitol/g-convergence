@@ -13,13 +13,13 @@
 
 /* Obtains a response to a POST/GET request. */
 int 
-retrieve_response (void *coninfo_cls, char* url, char *fingerprint_from_client);
+retrieve_response (void *coninfo_cls, const char* url, const char *fingerprint_from_client);
 
 /* Sends response back to the client. This function could be a wrapper for
  * send_page.
  */
 int
-send_response (struct MHD_Connection *connection, const char *response_data
+send_response (struct MHD_Connection *connection, const char *response_data,
                int status_code);
 
-#ifndef // RESPONSE_H
+#endif // RESPONSE_H
