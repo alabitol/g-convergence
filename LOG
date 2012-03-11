@@ -1,0 +1,62 @@
+Authors:     g-coders 
+Created:     February 21, 2012
+Revised:     March 11, 2012
+Description: This is where we keep log of our weekly progress on the project.
+*******************************************************************************
+
+Week 1:
+
+Initially, we were going to implement the web server portion of our notary
+ourselves using by using sockets and pthread. After a while, it became
+apparent that we would be duplicating a lot of functionality that has
+already been implemented before and is available for use via a C
+library. After a little bit of searching we found that libcrohttpd provides
+exactly what we are looking for. Thus, we decided to use this library in our
+project to provide the functionality of a web server. 
+
+First, we proceeded to learn about how to use this library by stepping
+through tutorial available at 
+
+www.gnu.org/software/libmicrohttpd/tutorial.html
+
+We established that we were going to have a meeting of the entire group on
+Sunday and also meet once or twice during the week in smaller groups to pair
+programm and discuss specific implementation issues.
+
+
+Week 2:
+
+We decided that we wanted to use the prototype+extensions development
+methodology, so after learning about libmicrohttpd from the tutorial, we wrote
+stubs of the most high-level functions that we need to provide the essential
+functionality of the Convergence server. Once we determined all the high level
+functions that we necessarily needed, we split the implementation of
+functions in individual files among ourselves keeping in mind the advatages
+of pair programming and code review.
+
+We also found it useful to create a UML diagram to help us visualize the
+role of various components in the project and the interactions between them.
+
+Finnally, we created a central repository on Github, which we each cloned in
+our individual accounts. We decided that each of us is going to have pull and
+push privileges to this repository.
+
+
+Week 3:
+
+After we decided on the structure of the system, we began implementing the
+functions that we specified. Many of our implementation choices were
+determined by libmicrohttpd library which mandates a particular sequence and
+structure of server operations. Thus, in our implementation we drew
+inspiration from examples in the tutorial examples we found on the
+libmicrohttpd website. 
+
+We spent considerable amount of time plowing through the documentation and
+server examples to understand how to properly use various library functions.
+
+
+Week 4:
+
+It is high time to begin writing tests for the entire system as well as unit
+tests for individual functions. For this purpose we created a file called
+notary-test.c, in which we will perform all the tests.
