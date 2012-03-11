@@ -29,8 +29,5 @@ request_certificate (char *url, char *fingerprint_from_website)
 int
 verify_certificate (char *fingerprint_from_client, char *fingerprint_from_website)
 {
-  if (strcmp (fingerprint_from_client, fingerprint_from_website) == 0)
-    return 1;
-  else
-    return 0;
+  return !strcmp(finger_from_client, fingerprint_from_website);
 }
