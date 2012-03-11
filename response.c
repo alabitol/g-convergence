@@ -19,11 +19,12 @@
 struct connection_info_struct
 {
   int connection_type;
-  struct MHD_PostProcessor *post_processor;
   const char *answer_string;
   int answer_code;
 };
 
+//WE ARE NOT SURE ABOUT THIS
+#define RESPONSE_LEN 201
 
 /* Figure out RESPONSE_LEN and define it here. */
 /* SEEMS TO BE ABOUT 201 CHARACTERS LONG */
@@ -31,10 +32,10 @@ struct connection_info_struct
 /* Obtains a response to a POST/GET request.
  */
 int 
-retrieve_response (void *coninfo_cls, char* url, char *fingerprint_from_client)
+retrieve_response (void *coninfo_cls, const char* url, const char *fingerprint_from_client)
 {
   int verified, requested; // was certificate verified?
-  char *fingerprint_from_client, fingerprint_from_website;
+  char *fingerprint_from_website;
   char *json_fingerprint_list; // the response to send to client
 
   struct connection_info_struct *con_info = coninfo_cls;
@@ -90,7 +91,7 @@ retrieve_response (void *coninfo_cls, char* url, char *fingerprint_from_client)
  * send_page.
  */
 int
-send_response (struct MHD_Connection *connection, const char *page,
+send_response (struct MHD_Connection *connection, const char *response_data,
                int status_code)
 {
   int return_value;

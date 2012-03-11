@@ -7,6 +7,8 @@
  * Description: Handle sending a certificate request to the website and
  *              receiving its response.
  ******************************************************************************/
+#include "connection.h"
+#include "response.h"
 
 /* The number of simultaneous requests. */
 #define MAX_CLIENTS 15
@@ -15,21 +17,10 @@
 #define POST 1
 
 /* Keep track of the number of clients with active requests. */
-unsigned int num_active_clients = 0;
+unsigned int number_active_clients = 0;
 
 const char *busy_page = "The server is too busy to handle the verification request.";
-const char *unsupported_method_page = "The server received a request with unsupported method."
-
-/* This datastructure contains information about an individual connection from
- * a client. 
- */
-struct connection_info_struct
-{
-  int connection_type;
-  struct MHD_PostProcessor *post_processor;
-  const char *answer_string;
-  int answer_code;
-};
+const char *unsupported_method_page = "The server received a request with unsupported method.";
 
 /* Handles the connection of a client. The address of this function needs to
  * be passed to MHD_start_daemon.
@@ -77,8 +68,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     /* Keep processing the upload data until there is no data to process. */
     if (0 != *upload_data_size)
     {
-      MHD_post_process (con_info->post_processor, upload_data,
-	  *upload_data_size);
+      retrieve_response(con_info, url, upload_data);
       *upload_data_size = 0;
 
       /* Can we send the response right away instead of return MHD_YES? */
@@ -93,10 +83,14 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
   }
   else if (strcmp (method, "GET") == 0)
   {
-    retrieve_get_response (void *coninfo_cls, char *url);
+    struct connection_info_struct *con_info = *con_cls;
+
+    /* If the fingerprint is not included in the request, call the method retrieve_response 
+       without a fingerprint from the client */
+    retrieve_response(con_info, url, NULL);
     
     /* We probably want to call get_response here as well. Hmmm... */
-    return send_response (connection, con_info->answer_string, con-info->answer_code);
+    return send_response (connection, con_info->answer_string, con_info->answer_code);
   }
   else
   {
@@ -107,11 +101,23 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
   }
 }
 
-/* Clean up after the request completes closing the connection.
+/* Clean up after the request completes closing the connection. Taken from the microhttpd tutorial 
+   (Example 5).
  */
 void
 request_completed (void *cls, struct MHD_Connection *connection,
     void **con_cls, enum MHD_RequestTerminationCode toe)
 {
+  struct connection_info_struct *con_info = *con_cls;
+  if (con_info == NULL)
+    return;
 
+  if (con_info->connection_type == POST)
+    {
+      if (con_info->answer_string)
+        free ((char*)con_info->answer_string);
+    }
+  
+  free (con_info);
+  *con_cls = NULL;
 }
