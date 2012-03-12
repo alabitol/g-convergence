@@ -31,7 +31,30 @@ mem_allocated ()
 // response.c, and cache.c.
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+/* Test the entire system. */
 void
+test_convergence ()
+{
+  /* Start the daemon. */
+  MHD_start_daemon ();
+
+  /* Create a curl request. */
+  request = curl_easy_init ();
+
+  /* Set the appropriate request parameters. */
+  curl_easy_setopt (request, CURLOPT_URL, "http://127.0.0.1:1080/hello_world");
+
+  /* Send the request. */
+  return_val = curl_easy_perform (request);
+  
+  /* Check the return value and record test results. */
+  if (return_val == CURLE_OK)
+  {
+  }
+
+} // test_convergence
+
+void 
 test_answer_to_connection ()
 {
 } // test_answer_to_connection
@@ -85,7 +108,7 @@ int
 main (int argc, char *argv[])
 {
   /* Test all functions here. */
-  test_answer_to_connection ();
+  test_convergence ();
   test_request_completed ();
   test_retrieve_post_response ();
   test_send_response ();
