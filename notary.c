@@ -1,8 +1,5 @@
 /*****************************************************************************
- * Authors: Tolu Alabi
- *          Zach Butler
- *          Martin Dluhos
- *
+ * Authors: g-coders
  * Created: February 27, 2012
  * Revised: March 5, 2012
  * Description: This program starts the notary server which listens for
@@ -10,6 +7,7 @@
  ******************************************************************************/
 
 #include <microhttpd.h>
+#include <stdbool.h>
 
 #include "connection.h"
 #include "certificate.h"
@@ -38,6 +36,18 @@ int main (int argc, char *argv[])
 
   struct MHD_Daemon *daemon;
   unsigned short port;
+
+  /* Set sensible defaults for the server. */
+  int http_port = 80;
+  int ssl_port = 443;
+  char *ip;
+  char *certificate_file;
+  char *key_file;
+  char * username;
+  char * group;
+  bool debug;
+  bool foreground;
+  char *backend;
 
   /* Process command line arguments. */
   for (i = 1; i < argc; i++)
