@@ -23,4 +23,4 @@ cache.o: cache.c
 	${CC} -c -o $@ $^
 
 clean:
-	rm -f *.o
+	rm -f *.o \#*# .#*
