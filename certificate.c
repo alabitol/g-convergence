@@ -31,3 +31,11 @@ verify_certificate (char *fingerprint_from_client, char *fingerprint_from_websit
 {
   return !strcmp(fingerprint_from_client, fingerprint_from_website);
 }
+
+/* Verifies that a fingerprint has the correct format. */
+int
+verify_fingerprint_format (char *fingerprint)
+{
+  /* STUB */
+  return 1;
+}
