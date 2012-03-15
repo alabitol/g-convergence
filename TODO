@@ -1,13 +1,16 @@
 Authors:     g-coders 
 Created:     February 21, 2012 
-Revised:     March 11, 2012
-Description: Where are we in our project? 
+Revised:     March 12, 2012
+Description: Where we are in our project.
 *******************************************************************************
 
-Questions:
+Next steps:
 
-The notary needs to receive the url of the site to verify and the fingerprint
-of the certificate. What is the exact format in which the notary receives this data?
+notary.c:
+
+* Can the daemon handle ssl connections? If so, how? Make sure this
+functionality is verified.
+* We need the daemon to listen on ssl_port and 4242. Can we start two daemons?
 
 The plan:
 

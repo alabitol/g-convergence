@@ -1,10 +1,11 @@
 # Makes Convergence notary
 # created: February 27, 2012
-# revised: March 11, 2012
+# revised: March 12, 2012
 
 CFLAGS= -Wall -ggdb3
+OBJS= connection.o certificate.o response.o cache.o
 
-notary: notary.c connection.o certificate.o response.o
+notary: notary.c ${OBJS}
 	${CC} -o $@ $^
 
 test: notary-test.c
@@ -23,4 +24,4 @@ cache.o: cache.c
 	${CC} -c -o $@ $^
 
 clean:
-	rm -f *.o
+	/bin/rm -f ${OBJS} \#*# .#*
