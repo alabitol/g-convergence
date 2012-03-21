@@ -60,3 +60,14 @@ Week 4:
 It is high time to begin writing tests for the entire system as well as unit
 tests for individual functions. For this purpose we created a file called
 notary-test.c, in which we will perform all the tests.
+
+Initially, we wrote unit tests for functions which do not do not depend on
+libmicrohttpd functions, which are included in certificate.c. It will be more
+difficult to test those functions that do because we will need to determine
+how to construct input to these functions, which is otherwise the
+responsibility of microhttpd library.
+
+Week 5:
+
+We need to convert the formatting of our documentation to Doxygen compatible
+formatting.

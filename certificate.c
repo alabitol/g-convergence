@@ -4,11 +4,19 @@
  *          Martin Dluhos
  *
  * Created: February 21, 2012
- * Revised: March 1, 2012
+ * Revised: March 19, 2012
  * Description: Handle sending a certificate request to the website and
  *              receiving its response.
  ******************************************************************************/
+#include <certificate.h>
 #include<curl/curl.h>
+
+static size_t wrfu (void *ptr,  size_t  size,  size_t  nmemb,  void *stream)
+{
+  (void) stream;
+  (void) ptr;
+  return size * nmemb;
+}
 
 /* Requests a certificate from the website given by the url. Saved the
  * fingerprint of the certificate into fingerprint_from_website. Return 1 if

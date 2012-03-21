@@ -11,8 +11,8 @@
 #include "notary.h"
 
 /* Requests a certificate from the website given by the url. */
-int 
-request_certificate (char *url, char *fingerprint_from_website);
+char * 
+request_certificate (char *url);
 
 /* Verifies that the received certificate from the website matches with the
  * fingerprint from the user.
