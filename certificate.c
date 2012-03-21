@@ -11,6 +11,29 @@
 #include <certificate.h>
 #include<curl/curl.h>
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Helpers
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+/* Determine if a character is a hexadecimal character. Return 1 if it does,
+ * else return 0.
+ */
+int
+is_hex_char (char c)
+{
+  if ((c >= 'a' && c <= 'f') ||
+      (c >= 'A' && c <= 'F'))
+  {
+    return 1;
+  }
+  else
+  {
+    return 0;
+  }
+} // is_hex_char
+
+
 static size_t wrfu (void *ptr,  size_t  size,  size_t  nmemb,  void *stream)
 {
   (void) stream;
@@ -63,7 +86,7 @@ request_certificate (char *url)
   }
  
   curl_global_cleanup();
-}
+} // request_certificate
 
 /* Verifies that the fingerprint from the website matches the
  * fingerprint from the user. Returns 1 if fingerprints match. Otherwise,
@@ -73,12 +96,50 @@ int
 verify_certificate (char *fingerprint_from_client, char *fingerprint_from_website)
 {
   return !strcmp(fingerprint_from_client, fingerprint_from_website);
-}
+} // verify_certificate
 
 /* Verifies that a fingerprint has the correct format. */
 int
 verify_fingerprint_format (char *fingerprint)
 {
-  /* STUB */
-  return 1;
-}
+  /* Length of SHA-1 fingerprint */
+  int fpt_length = 59;
+  int i;
+
+  /* Check the length of the fingerprint. */
+  if (strlen (fingerprint) != fpt_length)
+    return 0;
+
+  /* Check three characters at a time until reaching the last colon. There are
+   * 19 sequences of two hex and one colon characters.
+   */
+  for (i = 0; i < fpt_length-2; i++)
+  {
+    /* Check if the first two characters are hex and the third a colon. */
+    if (is_hex_char (fingerprint[i]))
+      i++;
+    else 
+      return 0;
+
+    if (is_hex_char (fingerprint[i]))
+      i++;
+    else
+      return 0;
+
+    if (fingerprint[i] == ':')
+      i++;
+    else
+      return 0;
+  }
+
+  /* Check the last two characters. */
+  if (is_hex_char (fingerprint[i]))
+    i++;
+  else 
+    return 0;
+
+  if (is_hex_char (fingerprint[i]))
+    return 1;
+  else
+    return 0;
+} // verify_fingerprint_format 
