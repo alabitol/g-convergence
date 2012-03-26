@@ -10,11 +10,7 @@
 #include "connection.h"
 #include "response.h"
 
-/* The number of simultaneous requests. */
-#define MAX_CLIENTS 15
-#define POST_BUFFER_SIZE 512
-#define GET 0
-#define POST 1
+#include "notary.h"
 
 /* Keep track of the number of clients with active requests. */
 unsigned int number_active_clients = 0;

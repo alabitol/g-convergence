@@ -20,6 +20,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+/* The number of simultaneous requests. */
+#define MAX_CLIENTS 15
+#define POST_BUFFER_SIZE 512
+#define GET 0
+#define POST 1
+
+#define PORT 8888
+
 /* This datastructure contains information about an individual connection from
  * a client. 
  */
@@ -29,5 +37,6 @@ struct connection_info_struct
   const char *answer_string;
   int answer_code;
 };
+
 
 #endif // NOTARY_H

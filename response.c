@@ -12,19 +12,9 @@
 #include "response.h"
 #include "certificate.h"
 
-
-/* This datastructure contains information about an individual connection from
- * a client. 
- */
-struct connection_info_struct
-{
-  int connection_type;
-  const char *answer_string;
-  int answer_code;
-};
-
 //WE ARE NOT SURE ABOUT THIS
 #define RESPONSE_LEN 201
+const char* page = "Your request was successful!";
 
 /* Figure out RESPONSE_LEN and define it here. */
 /* SEEMS TO BE ABOUT 201 CHARACTERS LONG */
@@ -39,8 +29,11 @@ retrieve_response (void *coninfo_cls, const char* url, const char *fingerprint_f
   char *json_fingerprint_list; // the response to send to client
 
   struct connection_info_struct *con_info = coninfo_cls;
-  
-  requested = request_certificate (url, fingerprint_from_website);
+
+  char* requested_fingerprint = request_certificate(url);
+  fingerprint_from_website = (char*)malloc(sizeof(char) * strlen(requested_fingerprint));
+
+  strcpy(fingerprint_from_website, requested_fingerprint);
   
   if (requested == 0)
     {

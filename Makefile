@@ -2,11 +2,13 @@
 # created: February 27, 2012
 # revised: March 12, 2012
 
+CURLFLAG = -lcurl
+MHDFLAG = -lmicrohttpd
 CFLAGS= -Wall -ggdb3
 OBJS= connection.o certificate.o response.o cache.o
 
 notary: notary.c ${OBJS}
-	${CC} -o $@ $^
+	${CC} -o $@ $^ ${CURLFLAG} ${MHDFLAG}
 
 test: notary-test.c
 	${CC} -o $@ $^

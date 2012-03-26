@@ -12,13 +12,13 @@
 
 /* Requests a certificate from the website given by the url. */
 char * 
-request_certificate (char *url);
+request_certificate (const char *url);
 
 /* Verifies that the received certificate from the website matches with the
  * fingerprint from the user.
  */
 int
-verify_certificate (char *fingerprint_from_client, char *fingerprint_from_website);
+verify_certificate (const char *fingerprint_from_client, char *fingerprint_from_website);
 
 /* Verifies that a fingerprint has the correct format. */
 int

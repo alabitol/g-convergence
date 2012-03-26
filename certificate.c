@@ -8,8 +8,8 @@
  * Description: Handle sending a certificate request to the website and
  *              receiving its response.
  ******************************************************************************/
-#include <certificate.h>
-#include<curl/curl.h>
+#include "certificate.h"
+#include <curl/curl.h>
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Helpers
@@ -46,7 +46,7 @@ static size_t wrfu (void *ptr,  size_t  size,  size_t  nmemb,  void *stream)
  * certificate was obtained. Otherwise, return 0.
  */
 char *
-request_certificate (char *url)
+request_certificate (const char *url)
 {
   
   CURL *curl;
@@ -93,7 +93,7 @@ request_certificate (char *url)
  * returns 0.
  */
 int
-verify_certificate (char *fingerprint_from_client, char *fingerprint_from_website)
+verify_certificate (const char *fingerprint_from_client, char *fingerprint_from_website)
 {
   return !strcmp(fingerprint_from_client, fingerprint_from_website);
 } // verify_certificate
@@ -143,3 +143,4 @@ verify_fingerprint_format (char *fingerprint)
   else
     return 0;
 } // verify_fingerprint_format 
+

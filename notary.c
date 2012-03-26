@@ -56,8 +56,10 @@ set_notary_option (char *option, int *i, char *argv[])
     fprintf (stderr, "Could not allocate memory for ...\n");
     return 0;
   }
+
   option = temp;
-  strcpy (option, argv[*i]);
+  strcpy(option, argv[*i]);
+
   return 1;
 }
 
@@ -69,11 +71,11 @@ int main (int argc, char *argv[])
   /* Set sensible defaults for the server. */
   int http_port = 80;
   int ssl_port = 443;
-  char ip[] = ""; // is this right?
-  char certificate_file[] = "/etc/ssl/certs/convergence.pem";
-  char key_file[] = "/etc/ssl/private/convergence.key";
-  char username[] = "nobody"; 
-  char group[] = "nogroup";
+  char *ip = "";
+  char *certificate_file = "/etc/ssl/certs/convergence.pem";
+  char *key_file = "/etc/ssl/private/convergence.key";
+  char *username = "nobody"; 
+  char *group = "nogroup";
   bool debug = false;
   bool foreground = false;
   /* Implement the backend option as an extension */
@@ -97,6 +99,7 @@ int main (int argc, char *argv[])
     else if (! strcmp (argv[i], "-i"))
     {
       set_notary_option (ip, &i, argv);
+      printf("%s\n", ip);
     }
     else if (! strcmp (argv[i], "-c"))
     {
