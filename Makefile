@@ -10,8 +10,8 @@ OBJS= connection.o certificate.o response.o cache.o
 notary: notary.c ${OBJS}
 	${CC} -o $@ $^ ${CURLFLAG} ${MHDFLAG}
 
-test: notary-test.c
-	${CC} -o $@ $^
+test: notary-test.c ${OBJS}
+	${CC} -o $@ $^ ${CURLFLAG} ${MHDFLAG}
 
 connection.o: connection.c
 	${CC} -c -o $@ $^

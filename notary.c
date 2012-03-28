@@ -47,7 +47,7 @@ static char*
 set_default_notary_option (char* default_string)
 {
   char* option;
-  option = (char*) malloc(sizeof(char) * strlen(default_string));
+  option = (char*) malloc(sizeof(char) * (strlen(default_string) + 1) );
 
   strcpy(option, default_string);
   return option;
@@ -91,7 +91,7 @@ int main (int argc, char *argv[])
   char *key_file;
   key_file = set_default_notary_option("/etc/ssl/private/convergence.key");
   char *username;
-  username = set_default_notary_option("nobody"); 
+  username = set_default_notary_option("nobody");
   char *group;
   group = set_default_notary_option("nogroup");
   bool debug = false;

@@ -22,7 +22,8 @@
 int
 is_hex_char (char c)
 {
-  if ((c >= 'a' && c <= 'f') ||
+  if ((c >= '0' && c <= '9') ||
+      (c >= 'a' && c <= 'f') ||
       (c >= 'A' && c <= 'F'))
   {
     return 1;
@@ -126,10 +127,9 @@ verify_fingerprint_format (char *fingerprint)
     else
       return 0;
 
-    if (fingerprint[i] == ':')
-      i++;
-    else
+    if (! (fingerprint[i] == ':') )
       return 0;
+
   }
 
   /* Check the last two characters. */

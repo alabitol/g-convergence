@@ -169,9 +169,13 @@ test_verify_fingerprint_format ()
   } char_at_pos;
 
   /* Initialize the fingerprint. */
-  char *invalid_fpt = malloc (sizeof (char) * fpt_length);
-  sprintf
-    (invalid_fpt, "b6:a4:6d:54:bc:9a:04:fe:2a:ff:8b:b7:5a:3a:a9:b1:0f:66:73:a8");
+  char *invalid_fpt = malloc (sizeof (char) * (fpt_length + 1) );
+  strcpy (invalid_fpt, "b6:a4:6d:54:bc:9a:04:fe:2a:ff:8b:b7:5a:3a:a9:b1:0f:66:73:a8");
+
+  char *valid_fpt = malloc(sizeof(char) * (fpt_length + 1));
+  strcpy (valid_fpt, "51:1f:8e:c6:22:82:5b:ed:a2:75:cb:3e:95:ab:63:7f:69:d3:18:1c");
+
+  test (verify_fingerprint_format (valid_fpt) == 1);
   
   /* Fingerprint is longer. */
   char longer_fpt1[] =
@@ -203,7 +207,7 @@ test_verify_fingerprint_format ()
                         .invalid_char1 = ':' };
 
   char_at_pos *test_array[] = 
-  {&test0, &test1, &test2, &test3, &test4, &test5, &test6, &test7, &test8};
+    {&test0, &test1, &test2, &test3, &test4, &test5, &test6, &test7, &test8};
 
   for (i = 0; i < 9; i++)
     {
@@ -218,7 +222,7 @@ test_verify_fingerprint_format ()
         }
       else
         test (verify_fingerprint_format (invalid_fpt) == 0);
-          
+      
       invalid_fpt[test_array[i]->pos] = temp;
     }
   
