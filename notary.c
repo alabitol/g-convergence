@@ -41,6 +41,19 @@ print_usage ()
 
 } // print_help
 
+
+/*Set the default notary option */
+static char*
+set_default_notary_option (char* default_string)
+{
+  char* option;
+  option = (char*) malloc(sizeof(char) * strlen(default_string));
+
+  strcpy(option, default_string);
+  return option;
+}
+
+
 /* Set the appropriate notary option. */
 int
 set_notary_option (char *option, int *i, char *argv[])
@@ -71,11 +84,16 @@ int main (int argc, char *argv[])
   /* Set sensible defaults for the server. */
   int http_port = 80;
   int ssl_port = 443;
-  char *ip = "";
-  char *certificate_file = "/etc/ssl/certs/convergence.pem";
-  char *key_file = "/etc/ssl/private/convergence.key";
-  char *username = "nobody"; 
-  char *group = "nogroup";
+  char* ip;
+  ip = set_default_notary_option("");
+  char *certificate_file;
+  certificate_file = set_default_notary_option("/etc/ssl/certs/convergence.pem");
+  char *key_file;
+  key_file = set_default_notary_option("/etc/ssl/private/convergence.key");
+  char *username;
+  username = set_default_notary_option("nobody"); 
+  char *group;
+  group = set_default_notary_option("nogroup");
   bool debug = false;
   bool foreground = false;
   /* Implement the backend option as an extension */
@@ -99,7 +117,6 @@ int main (int argc, char *argv[])
     else if (! strcmp (argv[i], "-i"))
     {
       set_notary_option (ip, &i, argv);
-      printf("%s\n", ip);
     }
     else if (! strcmp (argv[i], "-c"))
     {
