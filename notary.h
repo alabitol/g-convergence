@@ -16,9 +16,20 @@
 #include <sys/types.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/uio.h>
 #include <microhttpd.h>
-#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/x509.h>
+#include <openssl/bio.h>
+#include <curl/curl.h>
+#include <openssl/sha.h>
 #include <stdio.h>
+#include <stdlib.h>
+
 
 /* The number of simultaneous requests. */
 #define MAX_CLIENTS 15

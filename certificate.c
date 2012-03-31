@@ -9,7 +9,8 @@
  *              receiving its response.
  ******************************************************************************/
 #include "certificate.h"
-#include <curl/curl.h>
+
+#define FPT_LENGTH 59
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Helpers
@@ -42,17 +43,82 @@ static size_t wrfu (void *ptr,  size_t  size,  size_t  nmemb,  void *stream)
   return size * nmemb;
 }
 
+/*
+This function converts the PEM certificate to its corresponding SHA1 fingerprint
+ */
+static char*
+get_fingerprint_from_cert (char* cert)
+{
+  ssize_t len;
+  BIO* bio_buffer;
+  X509* decoded_certificate;
+  const EVP_MD* digest;
+  unsigned char md[EVP_MAX_MD_SIZE];
+  unsigned int n;
+  char errmsg[1024];
+  unsigned err;
+  int pos;
+  //allocate space for the return string
+  char* fingerprint = calloc(FPT_LENGTH + 1, 1);
+
+  //initialize OpenSSL
+  //this allows us to access error messages
+  SSL_load_error_strings();
+  //this initializes the library for ssl (algorithms)
+  SSL_library_init();
+
+  len = strlen(cert);
+ //create BIO buffer for SSL, this buffer contains the certificate, buff
+  bio_buffer = BIO_new_mem_buf(cert, len);
+
+  //decode the buffer by reading from the newly created BIO buffer
+  if(! (decoded_certificate = PEM_read_bio_X509(bio_buffer, NULL, 0L, NULL)))
+    {
+      while( (err = ERR_get_error()))
+        {
+          errmsg[1023] = '\0';
+          ERR_error_string_n(err, errmsg, 1023);
+          fprintf(stderr, "peminfo: %s\n", errmsg);
+        }
+
+      BIO_free(bio_buffer);
+      exit(1);
+    }
+
+  //calculate and print out the fingerprint
+  digest = EVP_get_digestbyname("sha1");
+  X509_digest(decoded_certificate, digest, md, &n);
+
+  //concatenate the fingerprint to the return string
+  char* temp = malloc(sizeof(char) * 4);
+  for(pos=0; pos < 19; pos++)
+    {
+      sprintf(temp, "%02x:", md[pos]);
+      strcat(fingerprint, temp);
+    }
+
+  //then concatenate the final two characters
+  sprintf(temp, "%02x", md[pos]);
+  strcat(fingerprint, temp);
+
+  //free all memory
+  BIO_free(bio_buffer);
+  free(temp);
+
+  return fingerprint;
+}//get_fingerprint_from_cert
+
 /* Requests a certificate from the website given by the url. Saved the
  * fingerprint of the certificate into fingerprint_from_website. Return 1 if
  * certificate was obtained. Otherwise, return 0.
  */
 char *
 request_certificate (const char *url)
-{
-  
+{  
   CURL *curl;
   CURLcode res;
- 
+  char* certificate;
+
   curl_global_init(CURL_GLOBAL_DEFAULT);
  
   curl = curl_easy_init();
@@ -74,19 +140,22 @@ request_certificate (const char *url)
  
       res = curl_easy_getinfo(curl, CURLINFO_CERTINFO, &ci);
  
-      if(!res && ci) {
+      if((!res) && ci && (ci->num_of_certs > 0)) {
+
         struct curl_slist *slist;
         for(slist = ci->certinfo[0]; slist; slist = slist->next)
           if(!strncmp(slist->data, "Cert:", 5))
-            printf("%s\n", slist->data+5);
+            certificate = slist->data+5;
       }
     }
-  
- 
     curl_easy_cleanup(curl);
   }
- 
   curl_global_cleanup();
+
+  char* fingerprint = get_fingerprint_from_cert(certificate);
+
+  return fingerprint;
+  //return certificate;
 } // request_certificate
 
 /* Verifies that the fingerprint from the website matches the

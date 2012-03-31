@@ -4,14 +4,15 @@
 
 CURLFLAG = -lcurl
 MHDFLAG = -lmicrohttpd
+SSLFLAG = -lcrypto
 CFLAGS= -Wall -ggdb3
 OBJS= connection.o certificate.o response.o cache.o
 
 notary: notary.c ${OBJS}
-	${CC} -o $@ $^ ${CURLFLAG} ${MHDFLAG}
+	${CC} -o $@ $^ ${CURLFLAG} ${MHDFLAG} ${SSLFLAG}
 
 test: notary-test.c ${OBJS}
-	${CC} -o $@ $^ ${CURLFLAG} ${MHDFLAG}
+	${CC} -o $@ $^ ${CURLFLAG} ${MHDFLAG} ${SSLFLAG}
 
 connection.o: connection.c
 	${CC} -c -o $@ $^

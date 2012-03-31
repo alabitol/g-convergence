@@ -10,7 +10,10 @@
 
 #include "notary.h"
 
-/* Requests a certificate from the website given by the url. */
+/* Requests a certificate from the website given by the url
+   This function calculates and returns the fingerprint of the 
+   requested certificate
+*/
 char * 
 request_certificate (const char *url);
 
