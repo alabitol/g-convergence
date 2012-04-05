@@ -79,7 +79,7 @@ set_notary_option (char *option, int *i, char *argv[])
 int main (int argc, char *argv[])
 {
   int i;
-  struct MHD_Daemon *daemon;
+  struct MHD_Daemon *ssl_daemon, *http_daemon, *fourtwo_daemon;
 
   /* Set sensible defaults for the server. */
   int http_port = 80;
@@ -155,7 +155,11 @@ int main (int argc, char *argv[])
 
   /* Make sure we can start the daemon in the background. */
 
-  /* Start the MHD daemon to listen for client requests. 
+  /* Start the MHD daemons to listen for client requests. 
+   * We have 3 daemons to listen on 3 ports: the SSL port 
+   * (for standard traffic), the HTTP port (for proxy traffic) and 4242 traffic
+   * (for other notaries that are serving as proxies to query us)
+   *
    * Parameters: 
    * MHD_USE_THREAD_PER_CONNECTION: use one thread per connection 
    * port: port to listen on
@@ -169,27 +173,76 @@ int main (int argc, char *argv[])
    * NULL: arguments to the request_completed function
    * MHD_OPTION_END: indicate that there are no more options
    */
-  daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION, 
+  ssl_daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION, 
                              ssl_port, 
 			     NULL, 
 			     NULL, 
-			     &answer_to_connection, NULL, MHD_OPTION_NOTIFY_COMPLETED, 
-			     request_completed, NULL, MHD_OPTION_END);
+			     &answer_to_SSL_connection,
+                             NULL,
+                             MHD_OPTION_NOTIFY_COMPLETED, 
+			     request_completed,
+                             NULL, 
+                             MHD_OPTION_END
+                             );
 
-  if (daemon == NULL)
+  if (ssl_daemon == NULL)
   {
-    fprintf (stderr, "Error: Failed to start the MHD daemon\n");
+    fprintf (stderr, "Error: Failed to start the MHD SSL daemon\n");
     return 1;
   }
   else
-    printf ("MHD daemon is listening on port %d\n", ssl_port);
+    printf ("MHD SSL daemon is listening on port %d\n", ssl_port);
+
+
+  http_daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION, 
+                             http_port, 
+			     NULL, 
+			     NULL, 
+			     &answer_to_HTTP_connection,
+                             NULL,
+                             MHD_OPTION_NOTIFY_COMPLETED, 
+			     request_completed,
+                             NULL, 
+                             MHD_OPTION_END
+                             );
+
+  if (http_daemon == NULL)
+  {
+    fprintf (stderr, "Error: Failed to start the MHD HTTP daemon\n");
+    return 1;
+  }
+  else
+    printf ("MHD HTTP daemon is listening on port %d\n", http_port);
+
+  fourtwo_daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION, 
+                             4242, 
+			     NULL, 
+			     NULL, 
+			     &answer_to_4242_connection,
+                             NULL,
+                             MHD_OPTION_NOTIFY_COMPLETED, 
+			     request_completed,
+                             NULL, 
+                             MHD_OPTION_END
+                             );
+
+  if (fourtwo_daemon == NULL)
+  {
+    fprintf (stderr, "Error: Failed to start the MHD 4242 daemon\n");
+    return 1;
+  }
+  else
+    printf ("MHD 4242 daemon is listening on port 4242\n");
+
 
   /* Prevent the server from stopping immediately after starting. We might
    * want to change this approach in the future. */
   getchar ();
 
   /* Stop the  MHD daemon. */
-  MHD_stop_daemon (daemon);
+  MHD_stop_daemon (ssl_daemon);
+  MHD_stop_daemon (http_daemon);
+  MHD_stop_daemon (fourtwo_daemon);
 
   return 0;
 }
