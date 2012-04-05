@@ -36,6 +36,16 @@ is_hex_char (char c)
 } // is_hex_char
 
 
+/**
+ * Write Function: tell the curl functions where to write the data they
+ * receive from a network
+ *
+ * @param ptr a pointer to the location where the data will be stored
+ * @param size 
+ * @param nmemb The size of the data written will be size * nmemb
+ * @param userdata
+ * @return 
+ */
 static size_t wrfu (void *ptr,  size_t  size,  size_t  nmemb,  void *stream)
 {
   (void) stream;
@@ -223,12 +233,14 @@ char* request_certificate (const char *url)
  * returns 0.
  */
 int
-verify_certificate (const char *fingerprint_from_client, char *fingerprint_from_website)
+verify_certificate (const char *fingerprint_from_client, 
+                    char *fingerprint_from_website)
 {
   //Change the case of the fingerprint_from_website to ensure that it
   //is similar to the case of fingerprint_from_client
   int result_of_comparison;
-  result_of_comparison = strcmp(fingerprint_from_client, fingerprint_from_website);
+  result_of_comparison = 
+    strcmp(fingerprint_from_client, fingerprint_from_website);
 
   if (result_of_comparison < 0)
     {

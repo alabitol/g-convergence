@@ -102,7 +102,9 @@ int main (int argc, char *argv[])
   /* Process command line arguments. */
   for (i = 1; i < argc; i++)
   {
-    if ((! strcmp (argv[i], "-help")) || (! strcmp (argv[i], "--help")) || (! strcmp (argv[i], "-h")))
+    if ((! strcmp (argv[i], "-help")) || 
+        (! strcmp (argv[i], "--help")) ||
+        (! strcmp (argv[i], "-h")))
     {
       print_usage ();
     }
