@@ -10,8 +10,6 @@
  ******************************************************************************/
 #include "certificate.h"
 
-#define FPT_LENGTH 59
-
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Helpers
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -79,7 +77,7 @@ static void to_lower_case(char* fingerprint)
 /*
 This function converts the PEM certificate to its corresponding SHA1 fingerprint
  */
-static char* get_fingerprint_from_cert (char* cert)
+static void get_fingerprint_from_cert (char** cert, char** fingerprints, int num_of_certs)
 {
   ssize_t len;
   BIO* bio_buffer;
@@ -90,7 +88,6 @@ static char* get_fingerprint_from_cert (char* cert)
   char errmsg[1024];
   unsigned err;
   int pos;
-  char* fingerprint = calloc(FPT_LENGTH + 1, 1);
 
   //initialize OpenSSL
   //this allows us to access error messages
@@ -99,63 +96,64 @@ static char* get_fingerprint_from_cert (char* cert)
   //this initializes the library for ssl (algorithms)
   SSL_library_init();
 
-
-  len = strlen(cert);
-  //create BIO buffer for SSL, this buffer contains the certificate, buff
-  bio_buffer = BIO_new_mem_buf(cert, len);
-
-  //decode the buffer by reading from the newly created BIO buffer
-  if(! (decoded_certificate = PEM_read_bio_X509(bio_buffer, NULL, 0L, NULL)))
+  char* temp = malloc(sizeof(char) * 4);
+  int i;
+  for(i=0; i<num_of_certs; i++)
     {
-      while( (err = ERR_get_error()))
+      len = strlen(cert[i]);
+      //create BIO buffer for SSL, this buffer contains the certificate, buff
+      bio_buffer = BIO_new_mem_buf(cert[i], len);
+
+      //decode the buffer by reading from the newly created BIO buffer
+      if(! (decoded_certificate = PEM_read_bio_X509(bio_buffer, NULL, 0L, NULL)))
         {
-          errmsg[1023] = '\0';
-          ERR_error_string_n(err, errmsg, 1023);
-          fprintf(stderr, "peminfo: %s\n", errmsg);
+          while( (err = ERR_get_error()))
+            {
+              errmsg[1023] = '\0';
+              ERR_error_string_n(err, errmsg, 1023);
+              fprintf(stderr, "peminfo: %s\n", errmsg);
+            }
+
+          BIO_free(bio_buffer);
+          ERR_free_strings();
+          exit(1);
         }
 
-      BIO_free(bio_buffer);
-      ERR_free_strings();
-      exit(1);
+      //calculate and print out the fingerprint
+      digest = EVP_get_digestbyname("sha1");
+      X509_digest(decoded_certificate, digest, md, &n);
+
+      //concatenate the fingerprint to the return string
+      for(pos=0; pos < 19; pos++)
+        {
+          sprintf(temp, "%02x:", md[pos]);
+          strcat(fingerprints[i], temp);
+        }
+
+      //then concatenate the final two characters
+      sprintf(temp, "%02x", md[pos]);
+      strcat(fingerprints[i], temp);
+
+      //end the string with a null character
+      fingerprints[i][FPT_LENGTH] = '\0';
+      printf("Fingerprint: %s\n", fingerprints[i]);
     }
-
-  //calculate and print out the fingerprint
-  digest = EVP_get_digestbyname("sha1");
-  X509_digest(decoded_certificate, digest, md, &n);
-
-  char* temp = malloc(sizeof(char) * 4);
-  //concatenate the fingerprint to the return string
-  for(pos=0; pos < 19; pos++)
-    {
-      sprintf(temp, "%02x:", md[pos]);
-      strcat(fingerprint, temp);
-    }
-
-  //then concatenate the final two characters
-  sprintf(temp, "%02x", md[pos]);
-  strcat(fingerprint, temp);
-
-  //end the string with a null character
-  fingerprint[FPT_LENGTH] = '\0';
-
 
   //free all memory
   BIO_free(bio_buffer);
   ERR_free_strings();
   free(temp);
 
-  return fingerprint;
 }//get_fingerprint_from_cert
 
-/* Requests a certificate from the website given by the url. Saved the
- * fingerprint of the certificate into fingerprint_from_website. Return 1 if
- * certificate was obtained. Otherwise, return 0.
+/* Requests the certificates from the website given by the url, and stores
+ * the fingerprints of the corresponding certificates in the output
+ * parameter fingerprints. Returns the number of fingerprints retrieved.
  */
-char* request_certificate (const char *url)
+int request_certificate (const char *url, char** fingerprints)
 {  
   CURL *curl;
   CURLcode res;
-  char* certificate;
   //variable to determine the number of certificates retrieved
   int number_of_certs;
 
@@ -181,41 +179,51 @@ char* request_certificate (const char *url)
       res = curl_easy_getinfo(curl, CURLINFO_CERTINFO, &ci);
 
       number_of_certs = ci->num_of_certs;
+      //array to store the retrieved certificates
+      char* certificates[number_of_certs];
 
+      int i;
       if((!res) && ci)
         {
-              
-          struct curl_slist *slist;
-          for(slist = ci->certinfo[0]; slist; slist = slist->next)
-            if(!strncmp(slist->data, "Cert:", 5))
-              {
-                certificate = slist->data+5;
-              }
+          for(i=0; i<number_of_certs; i++)
+            {
+              struct curl_slist *slist;
+              for(slist = ci->certinfo[i]; slist; slist = slist->next)
+                if(!strncmp(slist->data, "Cert:", 5))
+                  {
+                    certificates[i] = slist->data+5;
+                  }
+            }
+
+          //retrieve the fingerprints from these certificates
+          get_fingerprint_from_cert(certificates, fingerprints, number_of_certs);
+
+          //Cleanup Functions
+          //Note that curl_easy_cleanup(curl) is not called here in case another
+          //connection is being made
+          curl_global_cleanup();
+          return number_of_certs;
+        }
+      else
+        {
+          fprintf(stderr, "Could not retrieve certificates from server\n");
+          curl_cleanup(curl);
+          return 0;
         }
     }
     else
       {
-        fprintf(stderr, "Could not retrieve certificate from server\n");
+        fprintf(stderr, "Could not establish a connection\n");
         curl_cleanup(curl);
-        exit(1);
+        return 0;
       }
   }
   else
     {
       fprintf(stderr, "Could not initialize CURL\n");
       curl_cleanup(curl);
-      exit(1);
+      return 0;
     }
-
-
-  char* fingerprint = get_fingerprint_from_cert(certificate);
-
-  //Cleanup Functions
-  //Note that curl_easy_cleanup(curl) is not called here in case another
-  //connection is being made
-  curl_global_cleanup();
-
-  return fingerprint;
 } // request_certificate
 
 /* Verifies that the fingerprint from the website matches the
@@ -223,25 +231,44 @@ char* request_certificate (const char *url)
  * returns 0.
  */
 int
-verify_certificate (const char *fingerprint_from_client, char *fingerprint_from_website)
+verify_certificate (const char **fingerprints_from_client, int num_of_client_certs, char **fingerprints_from_website, int num_of_website_certs)
 {
-  //Change the case of the fingerprint_from_website to ensure that it
-  //is similar to the case of fingerprint_from_client
+  //Change the case of the fingerprints_from_website to ensure that it
+  //is similar to the case of fingerprints_from_client
+  int case_check;
+  //this index will iterate over fingerprint_from_client
+  int i = 0;
+  //this index will iterate over fingerprint_from_website
+  int j = 0;
   int result_of_comparison;
-  result_of_comparison = strcmp(fingerprint_from_client, fingerprint_from_website);
 
-  if (result_of_comparison < 0)
+  while( (i < num_of_client_certs) )
     {
-      to_upper_case(fingerprint_from_website);
+      result_of_comparison = 1;
+      while( (j < num_of_website_certs) && (result_of_comparison != 0) )
+        {
+          case_check = strcmp(fingerprints_from_client[i], fingerprints_from_website[j]);
+          if (case_check < 0)
+            {
+              to_upper_case(fingerprints_from_website[j]);
+            }
+          else
+            if(case_check > 0)
+              {
+                to_lower_case(fingerprints_from_website[j]);
+              }
+
+          //compare the two fingerprints
+          result_of_comparison = strcmp(fingerprints_from_client[i], fingerprints_from_website[j]);
+
+          j++;
+        }
+
+      j = 0;
+      i++;
     }
-  else
-    if(result_of_comparison > 0)
-      {
-        to_lower_case(fingerprint_from_website);
-      }
 
-  return !strcmp(fingerprint_from_client, fingerprint_from_website);
-
+  return result_of_comparison;
 } // verify_certificate
 
 

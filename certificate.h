@@ -14,14 +14,14 @@
    This function calculates and returns the fingerprint of the 
    requested certificate
 */
-char* 
-request_certificate (const char *url);
+int 
+request_certificate (const char *url, char** fingerprints);
 
 /* Verifies that the received certificate from the website matches with the
  * fingerprint from the user.
  */
 int
-verify_certificate (const char *fingerprint_from_client, char *fingerprint_from_website);
+verify_certificate (const char **fingerprints_from_client, int num_of_client_certs, char **fingerprints_from_website, int num_of_website_certs);
 
 /* Verifies that a fingerprint has the correct format. */
 int

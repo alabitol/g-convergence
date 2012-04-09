@@ -14,6 +14,7 @@
 
 //WE ARE NOT SURE ABOUT THIS
 #define RESPONSE_LEN 201
+#define MAX_NO_OF_CERTS 7
 const char* page = "Your request was successful!";
 
 /* Figure out RESPONSE_LEN and define it here. */
@@ -22,20 +23,23 @@ const char* page = "Your request was successful!";
 /* Obtains a response to a POST/GET request.
  */
 int
-retrieve_response (void *coninfo_cls, const char* url, const char *fingerprint_from_client)
+retrieve_response (void *coninfo_cls, const char* url, const char **fingerprints_from_client, int num_client_certs)
 {
-  int verified, requested; // was certificate verified?
-  char *fingerprint_from_website;
+  int verified, num_of_certs; // was certificate verified?
+  char *fingerprints_from_website[MAX_NO_OF_CERTS];
   char *json_fingerprint_list; // the response to send to client
 
   struct connection_info_struct *con_info = coninfo_cls;
 
-  char* requested_fingerprint = request_certificate(url);
-  fingerprint_from_website = (char*)malloc(sizeof(char) * strlen(requested_fingerprint));
+  //create space for the fingerprints
+  int i;
+  for(i=0; i<MAX_NO_OF_CERTS; i++)
+    fingerprints_from_website[i] = calloc(sizeof(char) * FPT_LENGTH, 1);
 
-  strcpy(fingerprint_from_website, requested_fingerprint);
+  //get the fingerprints
+  num_of_certs = request_certificate(url, fingerprints_from_website);
   
-  if (requested == 0)
+  if (num_of_certs == 0)
     {
       /* The notary could not obtain the certificate from the website
        * for some reason
@@ -44,10 +48,10 @@ retrieve_response (void *coninfo_cls, const char* url, const char *fingerprint_f
       return MHD_NO;
     }
 
-  if(fingerprint_from_client != NULL)
+  if(fingerprints_from_client != NULL)
     {
       verified =
-        verify_certificate (fingerprint_from_client, fingerprint_from_website);
+        verify_certificate (fingerprints_from_client, num_client_certs, fingerprints_from_website, num_of_certs);
 
       if (verified == 1)
         con_info->answer_code = MHD_HTTP_OK; // 200
@@ -100,5 +104,3 @@ send_response (struct MHD_Connection *connection, const char *response_data,
 
   return return_value;
 }
-
-
