@@ -192,6 +192,7 @@ int request_certificate (const char *url, char** fingerprints)
                 if(!strncmp(slist->data, "Cert:", 5))
                   {
                     certificates[i] = slist->data+5;
+                    printf("%s\n", certificates[i]);
                   }
             }
 
@@ -317,3 +318,20 @@ verify_fingerprint_format (char *fingerprint)
     return 0;
 } // verify_fingerprint_format 
 
+int main()
+{
+  char* fingerprint[7];
+  int i;
+  for(i=0; i< 7; i++)
+    {
+      fingerprint[i] = calloc(FPT_LENGTH * sizeof(char), 1);
+    }
+
+  int certs = request_certificate("https://www.github.com", fingerprint);
+
+  for(i=0; i<certs; i++)
+    {
+      printf("%s\n", fingerprint[i]);
+    }
+  return 0;
+}
