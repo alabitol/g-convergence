@@ -14,7 +14,7 @@
    This function calculates and returns the fingerprint of the 
    requested certificate
 */
-char * 
+char* 
 request_certificate (const char *url);
 
 /* Verifies that the received certificate from the website matches with the

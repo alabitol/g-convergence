@@ -36,6 +36,16 @@ is_hex_char (char c)
 } // is_hex_char
 
 
+/**
+ * Write Function: tell the curl functions where to write the data they
+ * receive from a network
+ *
+ * @param ptr a pointer to the location where the data will be stored
+ * @param size 
+ * @param nmemb The size of the data written will be size * nmemb
+ * @param userdata
+ * @return 
+ */
 static size_t wrfu (void *ptr,  size_t  size,  size_t  nmemb,  void *stream)
 {
   (void) stream;
@@ -43,11 +53,43 @@ static size_t wrfu (void *ptr,  size_t  size,  size_t  nmemb,  void *stream)
   return size * nmemb;
 }
 
+static void curl_cleanup(CURL* curl_handle)
+{
+  curl_easy_cleanup(curl_handle);
+  curl_global_cleanup();
+}
+
+static void to_upper_case(char* fingerprint)
+{
+  int i=0;
+  while(fingerprint[i])
+    {
+      if( (fingerprint[i] != ':') && 
+          (fingerprint[i] >= 'a') && 
+          (fingerprint[i] <= 'f'))
+        fingerprint[i] -= 32;
+      i++;
+    }
+}
+
+static void to_lower_case(char* fingerprint)
+{
+  int i=0;
+  while(fingerprint[i])
+    {
+      if( (fingerprint[i] != ':') && 
+          (fingerprint[i] >= 'A') && 
+          (fingerprint[i] <= 'F'))
+        fingerprint[i] += 32;
+      i++;
+    }
+}
+
+
 /*
 This function converts the PEM certificate to its corresponding SHA1 fingerprint
  */
-static char*
-get_fingerprint_from_cert (char* cert)
+static char* get_fingerprint_from_cert (char* cert)
 {
   ssize_t len;
   BIO* bio_buffer;
@@ -58,17 +100,18 @@ get_fingerprint_from_cert (char* cert)
   char errmsg[1024];
   unsigned err;
   int pos;
-  //allocate space for the return string
   char* fingerprint = calloc(FPT_LENGTH + 1, 1);
 
   //initialize OpenSSL
   //this allows us to access error messages
   SSL_load_error_strings();
+
   //this initializes the library for ssl (algorithms)
   SSL_library_init();
 
+
   len = strlen(cert);
- //create BIO buffer for SSL, this buffer contains the certificate, buff
+  //create BIO buffer for SSL, this buffer contains the certificate, buff
   bio_buffer = BIO_new_mem_buf(cert, len);
 
   //decode the buffer by reading from the newly created BIO buffer
@@ -82,6 +125,7 @@ get_fingerprint_from_cert (char* cert)
         }
 
       BIO_free(bio_buffer);
+      ERR_free_strings();
       exit(1);
     }
 
@@ -89,8 +133,8 @@ get_fingerprint_from_cert (char* cert)
   digest = EVP_get_digestbyname("sha1");
   X509_digest(decoded_certificate, digest, md, &n);
 
-  //concatenate the fingerprint to the return string
   char* temp = malloc(sizeof(char) * 4);
+  //concatenate the fingerprint to the return string
   for(pos=0; pos < 19; pos++)
     {
       sprintf(temp, "%02x:", md[pos]);
@@ -101,8 +145,13 @@ get_fingerprint_from_cert (char* cert)
   sprintf(temp, "%02x", md[pos]);
   strcat(fingerprint, temp);
 
+  //end the string with a null character
+  fingerprint[FPT_LENGTH] = '\0';
+
+
   //free all memory
   BIO_free(bio_buffer);
+  ERR_free_strings();
   free(temp);
 
   return fingerprint;
@@ -112,12 +161,13 @@ get_fingerprint_from_cert (char* cert)
  * fingerprint of the certificate into fingerprint_from_website. Return 1 if
  * certificate was obtained. Otherwise, return 0.
  */
-char *
-request_certificate (const char *url)
+char* request_certificate (const char *url)
 {  
   CURL *curl;
   CURLcode res;
   char* certificate;
+  //variable to determine the number of certificates retrieved
+  int number_of_certs;
 
   curl_global_init(CURL_GLOBAL_DEFAULT);
  
@@ -139,23 +189,43 @@ request_certificate (const char *url)
       struct curl_certinfo *ci = NULL;
  
       res = curl_easy_getinfo(curl, CURLINFO_CERTINFO, &ci);
- 
-      if((!res) && ci && (ci->num_of_certs > 0)) {
 
-        struct curl_slist *slist;
-        for(slist = ci->certinfo[0]; slist; slist = slist->next)
-          if(!strncmp(slist->data, "Cert:", 5))
-            certificate = slist->data+5;
-      }
+      number_of_certs = ci->num_of_certs;
+
+      if((!res) && ci)
+        {
+              
+          struct curl_slist *slist;
+          for(slist = ci->certinfo[0]; slist; slist = slist->next)
+            if(!strncmp(slist->data, "Cert:", 5))
+              {
+                certificate = slist->data+5;
+              }
+        }
     }
-    curl_easy_cleanup(curl);
+    else
+      {
+        fprintf(stderr, "Could not retrieve certificate from server\n");
+        curl_cleanup(curl);
+        exit(1);
+      }
   }
-  curl_global_cleanup();
+  else
+    {
+      fprintf(stderr, "Could not initialize CURL\n");
+      curl_cleanup(curl);
+      exit(1);
+    }
+
 
   char* fingerprint = get_fingerprint_from_cert(certificate);
 
+  //Cleanup Functions
+  //Note that curl_easy_cleanup(curl) is not called here in case another
+  //connection is being made
+  curl_global_cleanup();
+
   return fingerprint;
-  //return certificate;
 } // request_certificate
 
 /* Verifies that the fingerprint from the website matches the
@@ -163,10 +233,29 @@ request_certificate (const char *url)
  * returns 0.
  */
 int
-verify_certificate (const char *fingerprint_from_client, char *fingerprint_from_website)
+verify_certificate (const char *fingerprint_from_client, 
+                    char *fingerprint_from_website)
 {
+  //Change the case of the fingerprint_from_website to ensure that it
+  //is similar to the case of fingerprint_from_client
+  int result_of_comparison;
+  result_of_comparison = 
+    strcmp(fingerprint_from_client, fingerprint_from_website);
+
+  if (result_of_comparison < 0)
+    {
+      to_upper_case(fingerprint_from_website);
+    }
+  else
+    if(result_of_comparison > 0)
+      {
+        to_lower_case(fingerprint_from_website);
+      }
+
   return !strcmp(fingerprint_from_client, fingerprint_from_website);
+
 } // verify_certificate
+
 
 /* Verifies that a fingerprint has the correct format. */
 int

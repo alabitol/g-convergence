@@ -87,72 +87,72 @@ void
 test_request_certificate ()
 {
   FILE *valids, *invalids;
-  int max_len = 255;
-  char *url = malloc (sizeof (char) * max_len);
+  int max_len = 256;
+  char *string_read = malloc (sizeof(char) * max_len);
+  char *url, *correct_fingerprint, *retrieved_fingerprint;
+  int index_of_last_char;
 
   valids = fopen ("valid_urls.txt", "r");
   if (valids == NULL)
-    fprintf (stderr, "Could not open valid_urls.txt\n");
+    {
+      fprintf (stderr, "Could not open valid_urls.txt\n");
+      exit(1);
+    }
 
   invalids = fopen ("invalid_urls.txt", "r");
   if (invalids == NULL)
-    fprintf (stderr, "Could not open invalid_urls.txt\n");
+    {
+      fprintf (stderr, "Could not open invalid_urls.txt\n");
+      exit(1);
+    }
 
   /* Read valid urls from a file and retrieve a certificate from each. */
-  while (fgets (url, max_len, valids) != NULL)
-  {
-    test (request_certificate (url) != NULL);
-  }
+  while (fgets (string_read, max_len, valids) != NULL)
+    {
+      //First get rid of the newline character at the end of each line in the file
+      index_of_last_char = strlen(string_read) - 1;
+      if( string_read[index_of_last_char] == '\n')
+        string_read[index_of_last_char] = '\0';
+
+      //get the url from the string gotten from the file
+      url = strtok(string_read, "' '");
+
+      //then get the fingerprint
+      correct_fingerprint = strtok(NULL, "' '");
+
+      //Get the fingerprint by calling request_certificate
+      retrieved_fingerprint = request_certificate(url);
+
+      test (verify_certificate(correct_fingerprint, retrieved_fingerprint) == 1);
+      printf("tests: %d,  failed: %d\n", __tests, __fails);
+    }
 
   /* Read invalid urls from a file and request a certificate from each. */
-  while (fgets (url, max_len, invalids) != NULL)
-  {
-    test (request_certificate (url) == NULL);
-  }
+  while (fgets (string_read, max_len, invalids) != NULL)
+    {
+      //First get rid of the newline character at the end of each line in the file
+      index_of_last_char = strlen(string_read) - 1;
+      if( string_read[index_of_last_char] == '\n')
+        string_read[index_of_last_char] = '\0';
+
+      //get the url from the string gotten from the file
+      url = strtok(string_read, "' '");
+
+      //then get the fingerprint
+      correct_fingerprint = strtok(NULL, "' '");
+
+      //Get the fingerprint by calling request_certificate
+      retrieved_fingerprint = request_certificate(url);
+
+      //Check if the fingerprints are the same
+      test (verify_certificate(correct_fingerprint, retrieved_fingerprint) == 0);
+      printf("tests: %d,  failed: %d\n", __tests, __fails);
+    }
 
   fclose (valids);
   fclose (invalids);
 } // test_request_certificate
 
-void 
-test_verify_certificate ()
-{
-  int fpt_length = 59;
-  char valid_client_fpt[] =
-    "b6:a4:6d:54:bc:9a:04:fe:2a:ff:8b:b7:0a:3a:a9:b1:0f:66:73:a8";
-  char valid_website_fpt[] =
-  "b6:a4:6d:54:bc:9a:04:fe:2a:ff:8b:b7:0a:3a:a9:b1:0f:66:73:a8";
-
-  char *invalid_client_fpt = malloc (sizeof (char) * fpt_length);
-  char *invalid_website_fpt = malloc (sizeof (char) * fpt_length);
-    
-  /* Fingerprints match and are valid. */
-  test (verify_certificate (valid_client_fpt, valid_website_fpt) == 1);
-  
-  /* Fingerprints are valid format, but do not match. */
-
-  /* One of inner characters does not match. */
-  sprintf
-    (invalid_client_fpt, "b6:a4:6d:54:bc:9a:04:fe:2a:ff:8b:b7:5a:3a:a9:b1:0f:66:73:a8");
-  sprintf
-    (invalid_website_fpt, "b6:a4:6d:54:bc:9a:04:fe:2a:ff:8b:b7:0a:3a:a9:b1:0f:66:73:a8");
-  test (verify_certificate (invalid_client_fpt, invalid_website_fpt) == 0);
-
-  /* First character does not match. */
-  sprintf
-    (invalid_client_fpt, "b6:a4:6d:54:bc:9a:04:fe:2a:ff:8b:b7:5a:3a:a9:b1:0f:66:73:a8");
-  sprintf
-    (invalid_website_fpt, "a6:a4:6d:54:bc:9a:04:fe:2a:ff:8b:b7:5a:3a:a9:b1:0f:66:73:a8");
-  test (verify_certificate (invalid_client_fpt, invalid_website_fpt) == 0);
-
-  /* Two characters do not match. */
-  sprintf
-    (invalid_client_fpt, "b6:a4:6d:54:bc:9a:04:f4:2a:ff:8b:b7:5a:3a:a9:b1:0f:66:73:a8");
-  sprintf
-    (invalid_website_fpt, "a6:a4:6d:54:bc:9a:04:fe:2a:ff:8b:b7:5a:3a:a9:b1:0f:66:73:a8");
-  test (verify_certificate (invalid_client_fpt, invalid_website_fpt) == 0);
-
-} // test_verify_certificate
 
 void
 test_verify_fingerprint_format ()
@@ -253,15 +253,16 @@ int
 main (int argc, char *argv[])
 {
   /* Test all functions here. */
-  test_convergence ();
-  test_request_completed ();
-  test_retrieve_post_response ();
-  test_send_response ();
+  //test_convergence ();
+  //test_request_completed ();
+  //test_retrieve_post_response ();
+  //test_send_response ();
   test_request_certificate ();
-  test_verify_certificate ();
-  test_verify_fingerprint_format();
-  test_is_in_cache ();
-  test_cache_remove ();
-  test_cache_insert ();
-  test_cache_update ();
+  //test_verify_fingerprint_format();
+  //test_is_in_cache ();
+  //test_cache_remove ();
+  //test_cache_insert ();
+  //test_cache_update ();
+
+  return 0;
 } // main

@@ -9,21 +9,23 @@
  ******************************************************************************/
 #include "connection.h"
 #include "response.h"
-
+#include "certificate.h"
 #include "notary.h"
 
 /* Keep track of the number of clients with active requests. */
 unsigned int number_active_clients = 0;
 
-const char *busy_page = "The server is too busy to handle the verification request.";
-const char *unsupported_method_page = "The server received a request with unsupported method.";
+const char *busy_page = 
+  "The server is too busy to handle the verification request.";
+const char *unsupported_method_page = 
+  "The server received a request with unsupported method.";
 
 /* Handles the connection of a client. The address of this function needs to
  * be passed to MHD_start_daemon.
  *
  */
 int
-answer_to_connection (void *cls, struct MHD_Connection *connection,
+answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
     const char *url, const char *method,
     const char *version, const char *upload_data,
     size_t *upload_data_size, void **con_cls)
@@ -100,6 +102,10 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 /* Clean up after the request completes closing the connection. Taken from the microhttpd tutorial 
    (Example 5).
  */
+
+int answer_to_HTTP_connection();
+int answer_to_4242_connection();
+
 void
 request_completed (void *cls, struct MHD_Connection *connection,
     void **con_cls, enum MHD_RequestTerminationCode toe)

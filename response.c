@@ -21,7 +21,7 @@ const char* page = "Your request was successful!";
 
 /* Obtains a response to a POST/GET request.
  */
-int 
+int
 retrieve_response (void *coninfo_cls, const char* url, const char *fingerprint_from_client)
 {
   int verified, requested; // was certificate verified?
@@ -52,27 +52,27 @@ retrieve_response (void *coninfo_cls, const char* url, const char *fingerprint_f
       if (verified == 1)
         con_info->answer_code = MHD_HTTP_OK; // 200
       else
-        con_info->answer_code = MHD_HTTP_CONFLICT;  // 409
+        con_info->answer_code = MHD_HTTP_CONFLICT; // 409
     }
 
-  /* Format the response which will be sent to client. 
+  /* Format the response which will be sent to client.
    * Note that this response is sent both on a successful verification
    * and on a failed verification.
    * The JSON format of the response is available at
    * https://github.com/moxie0/Convergence/wiki/Notary-Protocol
    */
   json_fingerprint_list = malloc (RESPONSE_LEN * sizeof (char));
-  sprintf (json_fingerprint_list, 
+  sprintf (json_fingerprint_list,
            "{\n \
-      \t\"fingerprintList\":\n \
-      \t[\n \
-      \t  {\n \
-      \t     \"timestamp\": {\"start\": \"%s\", \"finish\": \"%s\"},\n \
-      \t     \"fingerprint\": \"%s\"\n \
-      \t  }\n \
-      \t],\n \
-      \t\"signature\": \"%s\"\n \
-      }\n");
+\t\"fingerprintList\":\n \
+\t[\n \
+\t {\n \
+\t \"timestamp\": {\"start\": \"%s\", \"finish\": \"%s\"},\n \
+\t \"fingerprint\": \"%s\"\n \
+\t }\n \
+\t],\n \
+\t\"signature\": \"%s\"\n \
+}\n");
 
   con_info->answer_string = json_fingerprint_list;
 
