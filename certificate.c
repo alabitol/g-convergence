@@ -327,11 +327,7 @@ int main()
       fingerprint[i] = calloc(FPT_LENGTH * sizeof(char), 1);
     }
 
-  int certs = request_certificate("https://www.github.com", fingerprint);
+  int certs = request_certificate("https://www.github.com:443", fingerprint);
 
-  for(i=0; i<certs; i++)
-    {
-      printf("%s\n", fingerprint[i]);
-    }
   return 0;
 }
