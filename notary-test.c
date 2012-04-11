@@ -169,7 +169,7 @@ test_request_certificate ()
 
   //free memory used for fingerprints
   for(i=0; i<MAX_NO_OF_CERTS; i++)
-    retrieved_fingerprints[i] = calloc(FPT_LENGTH * sizeof(char), 1);
+    free(retrieved_fingerprints[i]);
 } // test_request_certificate
 
 

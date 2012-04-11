@@ -136,7 +136,7 @@ static void get_fingerprint_from_cert (char** cert, char** fingerprints, int num
 
       //end the string with a null character
       fingerprints[i][FPT_LENGTH] = '\0';
-      printf("Fingerprint: %s\n", fingerprints[i]);
+      //printf("Fingerprint: %s\n", fingerprints[i]);
     }
 
   //free all memory
@@ -192,7 +192,7 @@ int request_certificate (const char *url, char** fingerprints)
                 if(!strncmp(slist->data, "Cert:", 5))
                   {
                     certificates[i] = slist->data+5;
-                    printf("%s\n", certificates[i]);
+                    //printf("%s\n", certificates[i]);
                   }
             }
 
@@ -318,16 +318,16 @@ verify_fingerprint_format (char *fingerprint)
     return 0;
 } // verify_fingerprint_format 
 
-int main()
-{
-  char* fingerprint[7];
-  int i;
-  for(i=0; i< 7; i++)
-    {
-      fingerprint[i] = calloc(FPT_LENGTH * sizeof(char), 1);
-    }
+/* int main() */
+/* { */
+/*   char* fingerprint[7]; */
+/*   int i; */
+/*   for(i=0; i< 7; i++) */
+/*     { */
+/*       fingerprint[i] = calloc(FPT_LENGTH * sizeof(char), 1); */
+/*     } */
 
-  int certs = request_certificate("https://www.github.com:443", fingerprint);
+/*   int certs = request_certificate("https://www.github.com:443", fingerprint); */
 
-  return 0;
-}
+/*   return 0; */
+/* } */

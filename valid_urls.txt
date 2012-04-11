@@ -6,4 +6,3 @@ https://mail.grinnell.edu/owa 45:24:40:53:4F:B4:7C:A6:C6:09:F4:B3:FA:DE:6A:DD:21
 https://www.starfieldtech.com C2:2A:30:8D:49:DE:49:32:3B:F1:AF:D9:F8:41:79:E6:A8:ED:65:A6
 https://www.wikipedia.org 03:47:7F:F5:F6:3B:F5:B6:10:C0:7D:65:9A:7B:A9:12:D3:20:83:68
 https://pioneerweb.grinnell.edu BE:6C:61:1B:0F:B4:66:9D:F9:96:61:F9:1D:57:86:2B:1F:EF:36:0A
-https://www.github.com CE:67:99:25:2C:AC:78:12:7D:94:B5:62:2C:31:C5:16:A6:34:73:53
