@@ -90,7 +90,7 @@ test_request_certificate ()
   int max_len = 256;
   char *string_read = malloc (sizeof(char) * max_len);
   char *url;
-  const char* correct_fingerprint[1];
+  char* correct_fingerprint;
   char* retrieved_fingerprints[MAX_NO_OF_CERTS];
   int index_of_last_char, number_of_certs;
 
@@ -124,15 +124,17 @@ test_request_certificate ()
       //get the url from the string gotten from the file
       url = strtok(string_read, "' '");
       //then get the fingerprint
-      correct_fingerprint[0] = strtok(NULL, "' '");
+      correct_fingerprint = strtok(NULL, "' '");
 
       //Get the fingerprint by calling request_certificate
       number_of_certs = request_certificate(url, retrieved_fingerprints);
       printf("%d certs found\n", number_of_certs);
 
-      test (verify_certificate(correct_fingerprint, 1, retrieved_fingerprints, number_of_certs) == 0);
+      test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) == 0);
       printf("tests: %d,  failed: %d\n", __tests, __fails);
 
+      //reset all the characters in each string to null to allow for the
+      //next iteration of fingerprint conversion
       for(i=0; i<MAX_NO_OF_CERTS; i++)
         for(j=0; j<FPT_LENGTH; j++)
           retrieved_fingerprints[i][j] = '\0';
@@ -150,15 +152,17 @@ test_request_certificate ()
       url = strtok(string_read, "' '");
 
       //then get the fingerprint
-      correct_fingerprint[0] = strtok(NULL, "' '");
+      correct_fingerprint = strtok(NULL, "' '");
 
       //Get the fingerprint by calling request_certificate
       number_of_certs = request_certificate(url, retrieved_fingerprints);
 
       //Check if the fingerprints are the same
-      test (verify_certificate(correct_fingerprint, 1, retrieved_fingerprints, number_of_certs) != 0);
+      test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) != 0);
       printf("tests: %d,  failed: %d\n", __tests, __fails);
 
+      //reset all the characters in each string to null to allow for the
+      //next iteration of fingerprint convers
       for(i=0; i<MAX_NO_OF_CERTS; i++)
         for(j=0; j<FPT_LENGTH; j++)
           retrieved_fingerprints[i][j] = '\0';

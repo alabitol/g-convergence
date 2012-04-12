@@ -14,17 +14,18 @@ notary: notary.c ${OBJS}
 test: notary-test.c ${OBJS}
 	${CC} -o $@ $^ ${CURLFLAG} ${MHDFLAG} ${SSLFLAG} ${CFLAGS}
 
-connection.o: connection.c
-	${CC} -c -o $@ $^
+connection: connection.c
+	${CC} -c $^
 
-certificate.o: certificate.c
-	${CC} -c -o $@ $^
+certificate: certificate.c
+	${CC} -c $^
 
-response.o: response.c
-	${CC} -c -o $@ $^
+response: response.c
+	${CC} -c $^
 
-cache.o: cache.c
-	${CC} -c -o $@ $^
+cache: cache.c
+	${CC} -c $^
 
 clean:
 	/bin/rm -f ${OBJS} \#*# .#*
+	/bin/rm -f notary test

@@ -23,7 +23,7 @@ const char* page = "Your request was successful!";
 /* Obtains a response to a POST/GET request.
  */
 int
-retrieve_response (void *coninfo_cls, const char* url, const char **fingerprints_from_client, int num_client_certs)
+retrieve_response (void *coninfo_cls, const char* url, const char *fingerprint_from_client)
 {
   int verified, num_of_certs; // was certificate verified?
   char *fingerprints_from_website[MAX_NO_OF_CERTS];
@@ -48,10 +48,10 @@ retrieve_response (void *coninfo_cls, const char* url, const char **fingerprints
       return MHD_NO;
     }
 
-  if(fingerprints_from_client != NULL)
+  if(fingerprint_from_client != NULL)
     {
       verified =
-        verify_certificate (fingerprints_from_client, num_client_certs, fingerprints_from_website, num_of_certs);
+        verify_certificate (fingerprint_from_client, fingerprints_from_website, num_of_certs);
 
       if (verified == 1)
         con_info->answer_code = MHD_HTTP_OK; // 200
@@ -66,7 +66,7 @@ retrieve_response (void *coninfo_cls, const char* url, const char **fingerprints
    * https://github.com/moxie0/Convergence/wiki/Notary-Protocol
    */
   json_fingerprint_list = malloc (RESPONSE_LEN * sizeof (char));
-  sprintf (json_fingerprint_list,
+  strcpy (json_fingerprint_list,
            "{\n \
 \t\"fingerprintList\":\n \
 \t[\n \
@@ -79,6 +79,10 @@ retrieve_response (void *coninfo_cls, const char* url, const char **fingerprints
 }\n");
 
   con_info->answer_string = json_fingerprint_list;
+
+  //free memory used for fingerprints
+  for(i=0; i<MAX_NO_OF_CERTS; i++)
+    free(fingerprints_from_website[i]);
 
   return MHD_YES;
 }

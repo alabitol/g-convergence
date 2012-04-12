@@ -49,6 +49,6 @@ struct connection_info_struct
   int answer_code;
 };
 
-#define FPT_LENGTH 59
+#define FPT_LENGTH 60
 
 #endif // NOTARY_H

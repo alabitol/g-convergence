@@ -25,12 +25,9 @@ const char *unsupported_method_page = "The server received a request with unsupp
 int
 answer_to_connection (void *cls, struct MHD_Connection *connection,
     const char *url, const char *method,
-    const char *version, const char **upload_data,
+    const char *version, const char *upload_data,
     size_t *upload_data_size, void **con_cls)
 {
-  //FIGURE THIS OUT
-  int num_of_client_certs = 3;
-
   /* The first time the function is called, only headers are processed. */
   if (con_cls == NULL)
   {    
@@ -67,7 +64,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
     /* Keep processing the upload data until there is no data to process. */
     if (0 != *upload_data_size)
     {
-      retrieve_response(con_info, url, upload_data, num_of_client_certs);
+      retrieve_response(con_info, url, upload_data);
       *upload_data_size = 0;
 
       /* Can we send the response right away instead of return MHD_YES? */
@@ -86,7 +83,7 @@ answer_to_connection (void *cls, struct MHD_Connection *connection,
 
     /* If the fingerprint is not included in the request, call the method retrieve_response 
        without a fingerprint from the client */
-    retrieve_response(con_info, url, NULL, num_of_client_certs);
+    retrieve_response(con_info, url, NULL);
     
     /* We probably want to call get_response here as well. Hmmm... */
     return send_response (connection, con_info->answer_string, con_info->answer_code);

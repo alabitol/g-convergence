@@ -21,7 +21,7 @@ request_certificate (const char *url, char** fingerprints);
  * fingerprint from the user.
  */
 int
-verify_certificate (const char **fingerprints_from_client, int num_of_client_certs, char **fingerprints_from_website, int num_of_website_certs);
+verify_certificate (const char *fingerprint_from_client, char **fingerprints_from_website, int num_of_website_certs);
 
 /* Verifies that a fingerprint has the correct format. */
 int

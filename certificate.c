@@ -60,20 +60,6 @@ static void to_upper_case(char* fingerprint)
     }
 }
 
-static void to_lower_case(char* fingerprint)
-{
-  int i=0;
-  while(fingerprint[i])
-    {
-      if( (fingerprint[i] != ':') && 
-          (fingerprint[i] >= 'A') && 
-          (fingerprint[i] <= 'F'))
-        fingerprint[i] += 32;
-      i++;
-    }
-}
-
-
 /*
 This function converts the PEM certificate to its corresponding SHA1 fingerprint
  */
@@ -96,7 +82,9 @@ static void get_fingerprint_from_cert (char** cert, char** fingerprints, int num
   //this initializes the library for ssl (algorithms)
   SSL_library_init();
 
+  //temporary value to store parts of the fingerprint
   char* temp = malloc(sizeof(char) * 4);
+
   int i;
   for(i=0; i<num_of_certs; i++)
     {
@@ -232,44 +220,37 @@ int request_certificate (const char *url, char** fingerprints)
  * returns 0.
  */
 int
-verify_certificate (const char **fingerprints_from_client, int num_of_client_certs, char **fingerprints_from_website, int num_of_website_certs)
+verify_certificate (const char *fingerprint_from_client, char **fingerprints_from_website, int num_of_website_certs)
 {
   //Change the case of the fingerprints_from_website to ensure that it
   //is similar to the case of fingerprints_from_client
-  int case_check;
-  //this index will iterate over fingerprint_from_client
-  int i = 0;
-  //this index will iterate over fingerprint_from_website
-  int j = 0;
-  int result_of_comparison;
-  
-  while( (i < num_of_client_certs) )
+  char* client_fingerprint = malloc(sizeof(char) * FPT_LENGTH);
+  strcpy(client_fingerprint, fingerprint_from_client);
+  to_upper_case(client_fingerprint);
+
+  //this loop changes all the fingerprints to upper-case
+  int i;
+  for(i=0; i<num_of_website_certs; i++)
     {
-      result_of_comparison = 1;
-      while( (j < num_of_website_certs) && (result_of_comparison != 0) )
-        {
-          case_check = strcmp(fingerprints_from_client[i], fingerprints_from_website[j]);
-          if (case_check < 0)
-            {
-              to_upper_case(fingerprints_from_website[j]);
-            }
-          else
-            if(case_check > 0)
-              {
-                to_lower_case(fingerprints_from_website[j]);
-              }
-
-          //compare the two fingerprints
-          result_of_comparison = strcmp(fingerprints_from_client[i], fingerprints_from_website[j]);
-
-          j++;
-        }
-
-      j = 0;
-      i++;
+      to_upper_case(fingerprints_from_website[i]);
     }
 
+  //this variable keeps track of the result of the comparison
+  int result_of_comparison = 1;
+
+  //this compares the fingerprint_from_client to the fingerprints from the website
+  for(i=0; i<num_of_website_certs; i++)
+    {
+      if(result_of_comparison != 0)
+        {
+          result_of_comparison = strcmp(client_fingerprint, fingerprints_from_website[i]);
+        }
+      else break;
+    }
+
+  free(client_fingerprint);
   return result_of_comparison;
+
 } // verify_certificate
 
 
@@ -316,18 +297,31 @@ verify_fingerprint_format (char *fingerprint)
     return 1;
   else
     return 0;
-} // verify_fingerprint_format 
+} // verify_fingerprint_format
+
 
 /* int main() */
 /* { */
-/*   char* fingerprint[7]; */
+
+/*   char* fingerprints[3]; */
+
 /*   int i; */
-/*   for(i=0; i< 7; i++) */
+/*   for(i=0; i<3; i++) */
 /*     { */
-/*       fingerprint[i] = calloc(FPT_LENGTH * sizeof(char), 1); */
+/*       fingerprints[i] = malloc(sizeof(char) * 15); */
 /*     } */
 
-/*   int certs = request_certificate("https://www.github.com:443", fingerprint); */
+/*   strcpy(fingerprints[0], "tolu"); */
+/*   strcpy(fingerprints[1], "44:44:5a"); */
+/*   strcpy(fingerprints[2], "0f:22:ee:ee:aa"); */
+
+/*   char* original = malloc(sizeof(char) * 15); */
+
+/*   strcpy(original, "0F:22:EE:EE:AA"); */
+
+/*   int result = verify_certificate(original, fingerprints, 3); */
+/*   printf("%s\n", original); */
+/*   printf("result is: %d\n", result); */
 
 /*   return 0; */
 /* } */
