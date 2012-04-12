@@ -14,7 +14,19 @@
  * be passed to MHD_start_daemon.
  */
 int
-answer_to_connection (void *cls, struct MHD_Connection *connection,
+answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
+    const char *url, const char *method,
+    const char *version, const char *upload_data,
+    size_t *upload_data_size, void **con_cls);
+
+int
+answer_to_HTTP_connection (void *cls, struct MHD_Connection *connection,
+    const char *url, const char *method,
+    const char *version, const char *upload_data,
+    size_t *upload_data_size, void **con_cls);
+
+int
+answer_to_4242_connection (void *cls, struct MHD_Connection *connection,
     const char *url, const char *method,
     const char *version, const char *upload_data,
     size_t *upload_data_size, void **con_cls);

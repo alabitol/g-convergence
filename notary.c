@@ -183,7 +183,7 @@ int main (int argc, char *argv[])
   else
     printf ("MHD SSL daemon is listening on port %d\n", ssl_port);
 
-
+ 
   http_daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION, 
                              http_port, 
 			     NULL, 
@@ -235,4 +235,5 @@ int main (int argc, char *argv[])
   MHD_stop_daemon (fourtwo_daemon);
 
   return 0;
+  }
 }
