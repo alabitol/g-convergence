@@ -2,9 +2,10 @@
  * Authors: Tolu Alabi
  *          Zach Butler
  *          Martin Dluhos
- *
+ *	    Chase Felker
+ *	    Radhika Krishna
  * Created: February 21, 2012
- * Revised: March 19, 2012
+ * Revised: April 11, 2012
  * Description: Handle sending a certificate request to the website and
  *              receiving its response.
  ******************************************************************************/
@@ -17,11 +18,10 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-/* Determine if a character is a hexadecimal character. Return 1 if it does,
- * else return 0.
+/* Determine if a character is a hexadecimal character. 
+ * Return 1 if it is, else return 0.
  */
-int
-is_hex_char (char c)
+int is_hex_char (char c)
 {
   if ((c >= '0' && c <= '9') ||
       (c >= 'a' && c <= 'f') ||
@@ -41,9 +41,9 @@ is_hex_char (char c)
  * receive from a network
  *
  * @param ptr a pointer to the location where the data will be stored
- * @param size 
- * @param nmemb The size of the data written will be size * nmemb
- * @param userdata
+ * @param size,
+ * @param nmemb, the size of the data written
+ * @param stream
  * @return 
  */
 static size_t wrfu (void *ptr,  size_t  size,  size_t  nmemb,  void *stream)
@@ -53,12 +53,18 @@ static size_t wrfu (void *ptr,  size_t  size,  size_t  nmemb,  void *stream)
   return size * nmemb;
 }
 
+/**
+ * Combines curl cleanup calls. 
+ */
 static void curl_cleanup(CURL* curl_handle)
 {
   curl_easy_cleanup(curl_handle);
   curl_global_cleanup();
 }
 
+/**
+ * Changes fingerprint (hex characters) to upper case.
+ */
 static void to_upper_case(char* fingerprint)
 {
   int i=0;
@@ -72,7 +78,10 @@ static void to_upper_case(char* fingerprint)
     }
 }
 
-static void to_lower_case(char* fingerprint)
+/**
+ * Changes fingerprint (hex characters) to lower case.
+ */
+ static void to_lower_case(char* fingerprint)
 {
   int i=0;
   while(fingerprint[i])
@@ -86,8 +95,9 @@ static void to_lower_case(char* fingerprint)
 }
 
 
-/*
-This function converts the PEM certificate to its corresponding SHA1 fingerprint
+/**
+ * This function converts the PEM certificate to its corresponding SHA1 fingerprint
+ * returns pointer to the fingerprint. 
  */
 static char* get_fingerprint_from_cert (char* cert)
 {
@@ -158,8 +168,8 @@ static char* get_fingerprint_from_cert (char* cert)
 }//get_fingerprint_from_cert
 
 /* Requests a certificate from the website given by the url. Saved the
- * fingerprint of the certificate into fingerprint_from_website. Return 1 if
- * certificate was obtained. Otherwise, return 0.
+ * fingerprint of the certificate into fingerprint_from_website. 
+ * Returns pointer to the fingerprint if successful, otherwise returns an error.
  */
 char* request_certificate (const char *url)
 {  
@@ -169,9 +179,11 @@ char* request_certificate (const char *url)
   //variable to determine the number of certificates retrieved
   int number_of_certs;
 
+  //initialize curl
   curl_global_init(CURL_GLOBAL_DEFAULT);
- 
   curl = curl_easy_init();
+  
+  //If curl has been initialized, set curl options.
   if(curl) {
     curl_easy_setopt(curl, CURLOPT_URL, url);
  
@@ -182,19 +194,19 @@ char* request_certificate (const char *url)
  
     curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L);
     curl_easy_setopt(curl, CURLOPT_CERTINFO, 1L);
- 
+    
+    //res is 0 if curl_easy_perform succeeds.
     res = curl_easy_perform(curl);
- 
+    
+    //Initialize ci and determine number of certificates.
     if(!res) {
       struct curl_certinfo *ci = NULL;
- 
       res = curl_easy_getinfo(curl, CURLINFO_CERTINFO, &ci);
-
       number_of_certs = ci->num_of_certs;
-
+      
+      //Get the certificate. 
       if((!res) && ci)
         {
-              
           struct curl_slist *slist;
           for(slist = ci->certinfo[0]; slist; slist = slist->next)
             if(!strncmp(slist->data, "Cert:", 5))
@@ -208,16 +220,16 @@ char* request_certificate (const char *url)
         fprintf(stderr, "Could not retrieve certificate from server\n");
         curl_cleanup(curl);
         exit(1);
-      }
+      } //If res is an error, return an error and exit.
   }
   else
     {
       fprintf(stderr, "Could not initialize CURL\n");
       curl_cleanup(curl);
       exit(1);
-    }
+    } //If ci has not been initialized, return an error and exit.
 
-
+  //Extract fingerprint
   char* fingerprint = get_fingerprint_from_cert(certificate);
 
   //Cleanup Functions
@@ -239,21 +251,14 @@ verify_certificate (const char *fingerprint_from_client,
   //Change the case of the fingerprint_from_website to ensure that it
   //is similar to the case of fingerprint_from_client
   int result_of_comparison;
+
+  to_upper_case(fingerprint_from_website);
+  to_upper_case(fingerprint_from_client);
+
   result_of_comparison = 
     strcmp(fingerprint_from_client, fingerprint_from_website);
-
-  if (result_of_comparison < 0)
-    {
-      to_upper_case(fingerprint_from_website);
-    }
-  else
-    if(result_of_comparison > 0)
-      {
-        to_lower_case(fingerprint_from_website);
-      }
-
-  return !strcmp(fingerprint_from_client, fingerprint_from_website);
-
+  
+  return !result_of_comparison; 
 } // verify_certificate
 
 
