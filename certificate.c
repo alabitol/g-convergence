@@ -212,32 +212,38 @@ char* request_certificate (const char *url)
             if(!strncmp(slist->data, "Cert:", 5))
               {
                 certificate = slist->data+5;
-              }
+              }  
+          
+          //Extract fingerprint
+          char* fingerprint = get_fingerprint_from_cert(certificate);
+
+          //Cleanup Functions
+          //Note that curl_easy_cleanup(curl) is not called here in case another
+          //connection is being made
+          curl_global_cleanup();
+
+          return fingerprint;
         }
       else
         {
           fprintf(stderr, "Could not retrieve certificate from server\n");
           curl_cleanup(curl);
-          exit(1);
+          return 0;
         } //If res is an error, return an error and exit.
     }
     else
       {
-        fprintf(stderr, "Could not initialize CURL\n");
+        fprintf(stderr, "Could not establish a connection\n");
         curl_cleanup(curl);
-        exit(1);
+        return 0;
       } //If ci has not been initialized, return an error and exit.
-
-    //Extract fingerprint
-    char* fingerprint = get_fingerprint_from_cert(certificate);
-
-    //Cleanup Functions
-    //Note that curl_easy_cleanup(curl) is not called here in case another
-    //connection is being made
-    curl_global_cleanup();
-
-    return fingerprint;
   }
+  else
+    {
+      fprintf(stderr, "Could not initialize CURL\n");
+      curl_cleanup(curl);
+      return 0;
+    }
 }
  // request_certificate
 
