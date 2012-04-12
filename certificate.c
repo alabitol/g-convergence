@@ -193,8 +193,7 @@ char* request_certificate (const char *url)
       number_of_certs = ci->num_of_certs;
 
       if((!res) && ci)
-        {
-              
+        { 
           struct curl_slist *slist;
           for(slist = ci->certinfo[0]; slist; slist = slist->next)
             if(!strncmp(slist->data, "Cert:", 5))
