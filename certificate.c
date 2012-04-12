@@ -242,7 +242,7 @@ verify_certificate (const char **fingerprints_from_client, int num_of_client_cer
   //this index will iterate over fingerprint_from_website
   int j = 0;
   int result_of_comparison;
-
+  
   while( (i < num_of_client_certs) )
     {
       result_of_comparison = 1;
