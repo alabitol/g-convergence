@@ -1,7 +1,7 @@
 /******************************************************************************
  * Authors: g-coders
  * Created: March 11, 2012
- * Revised: March 11, 2012
+ * Revised: April 11, 2012
  * Description: This is a header file which will be included in all other
  * header files of the project
  ******************************************************************************/
@@ -49,5 +49,18 @@ struct connection_info_struct
   int answer_code;
 };
 
+/* Begins logging of server activity to a log file. 
+ */
+int initiateLogging ();
+
+/* Print a helpful usage message if the user calls notary incorrectly or
+ * if she invokes it with --help flag. */
+void print_usage ();
+
+/*Set the default notary option */
+static char* set_default_notary_option (char* default_string);
+
+/* Set the appropriate notary option. */
+int set_notary_option (char *option, int *i, char *argv[]);
 
 #endif // NOTARY_H

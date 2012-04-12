@@ -19,6 +19,10 @@ answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
     const char *version, const char *upload_data,
     size_t *upload_data_size, void **con_cls);
 
+/* Clean up after the request completes closing the connection. Taken from 
+ * the microhttpd tutorial 
+ * (Example 5).
+ */
 int
 answer_to_HTTP_connection (void *cls, struct MHD_Connection *connection,
     const char *url, const char *method,
