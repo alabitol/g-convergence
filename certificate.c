@@ -218,26 +218,28 @@ char* request_certificate (const char *url)
         {
           fprintf(stderr, "Could not retrieve certificate from server\n");
           curl_cleanup(curl);
+          exit(1);
+        } //If res is an error, return an error and exit.
+    }
+    else
+      {
+        fprintf(stderr, "Could not initialize CURL\n");
+        curl_cleanup(curl);
         exit(1);
-      } //If res is an error, return an error and exit.
+      } //If ci has not been initialized, return an error and exit.
+
+    //Extract fingerprint
+    char* fingerprint = get_fingerprint_from_cert(certificate);
+
+    //Cleanup Functions
+    //Note that curl_easy_cleanup(curl) is not called here in case another
+    //connection is being made
+    curl_global_cleanup();
+
+    return fingerprint;
   }
-  else
-    {
-      fprintf(stderr, "Could not initialize CURL\n");
-      curl_cleanup(curl);
-      exit(1);
-    } //If ci has not been initialized, return an error and exit.
-
-  //Extract fingerprint
-  char* fingerprint = get_fingerprint_from_cert(certificate);
-
-  //Cleanup Functions
-  //Note that curl_easy_cleanup(curl) is not called here in case another
-  //connection is being made
-  curl_global_cleanup();
-
-  return fingerprint;
-} // request_certificate
+}
+ // request_certificate
 
 /* Verifies that the fingerprint from the website matches the
  * fingerprint from the user. Returns 1 if fingerprints match. Otherwise,
