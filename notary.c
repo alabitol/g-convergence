@@ -108,42 +108,32 @@ int main (int argc, char *argv[])
     {
       print_usage ();
     }
-    else if (! strcmp (argv[i], "-p"))
-    {
-      http_port = atoi (argv[++i]);
-    }
-    else if (! strcmp (argv[i], "-s"))
-    {
-      ssl_port = atoi (argv[++i]);
-    }
-    else if (! strcmp (argv[i], "-i"))
-    {
-      set_notary_option (ip, &i, argv);
-    }
-    else if (! strcmp (argv[i], "-c"))
-    {
-      set_notary_option (certificate_file, &i, argv);
-    }
-    else if (! strcmp (argv[i], "-k"))
-    {
-      set_notary_option (key_file, &i, argv);
-    }
-    else if (! strcmp (argv[i], "-u"))
-    {
-      set_notary_option (username, &i, argv);
-    }
-    else if (! strcmp (argv[i], "-g"))
-    {
-      set_notary_option (group, &i, argv);
-    }
-    else if (! strcmp (argv[i], "-d"))
-    {
-      debug = true;
-    }
-    else if (! strcmp (argv[i], "-f"))
-    {
-      foreground = true;
-    }
+    else 
+      {
+       char *arg = argv[i];
+       char c = arg[1];
+
+       switch (c)
+         {
+         case 'p':
+           http_port = atoi (argv[++i]);
+         case 's':
+           ssl_port = atoi (argv[++i]);
+         case 'i':
+           set_notary_option (ip, &i, argv);
+         case 'c':
+           set_notary_option (certificate_file, &i, argv);
+         case 'k':
+           set_notary_option (key_file, &i, argv);
+         case 'u':
+           set_notary_option (username, &i, argv);
+         case 'g':
+           set_notary_option (group, &i, argv);
+         case 'd':
+           debug = true;
+         case 'f':
+           foreground = true;
+      }
    // else if (! strcmp (argv[i], "-b"))
    // {
    //   set_notary_option (backend, &i, argv);
