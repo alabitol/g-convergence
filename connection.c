@@ -132,3 +132,4 @@ request_completed (void *cls, struct MHD_Connection *connection,
   free (con_info);
   *con_cls = NULL;
 }
+

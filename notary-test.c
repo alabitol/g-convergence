@@ -22,7 +22,7 @@ while (0)
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Globals
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
+#define MAX_NO_OF_CERTS 7
 int __tests = 0;
 int __fails = 0;
 
@@ -89,8 +89,10 @@ test_request_certificate ()
   FILE *valids, *invalids;
   int max_len = 256;
   char *string_read = malloc (sizeof(char) * max_len);
-  char *url, *correct_fingerprint, *retrieved_fingerprint;
-  int index_of_last_char;
+  char *url;
+  char* correct_fingerprint;
+  char* retrieved_fingerprints[MAX_NO_OF_CERTS];
+  int index_of_last_char, number_of_certs;
 
   valids = fopen ("valid_urls.txt", "r");
   if (valids == NULL)
@@ -106,6 +108,11 @@ test_request_certificate ()
       exit(1);
     }
 
+  //allocate space for the fingerprints
+  int i,j;
+  for(i=0; i<MAX_NO_OF_CERTS; i++)
+    retrieved_fingerprints[i] = calloc(FPT_LENGTH * sizeof(char), 1);
+
   /* Read valid urls from a file and retrieve a certificate from each. */
   while (fgets (string_read, max_len, valids) != NULL)
     {
@@ -116,15 +123,21 @@ test_request_certificate ()
 
       //get the url from the string gotten from the file
       url = strtok(string_read, "' '");
-
       //then get the fingerprint
       correct_fingerprint = strtok(NULL, "' '");
 
       //Get the fingerprint by calling request_certificate
-      retrieved_fingerprint = request_certificate(url);
+      number_of_certs = request_certificate(url, retrieved_fingerprints);
+      printf("%d certs found\n", number_of_certs);
 
-      test (verify_certificate(correct_fingerprint, retrieved_fingerprint) == 1);
+      test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) == 0);
       printf("tests: %d,  failed: %d\n", __tests, __fails);
+
+      //reset all the characters in each string to null to allow for the
+      //next iteration of fingerprint conversion
+      for(i=0; i<MAX_NO_OF_CERTS; i++)
+        for(j=0; j<FPT_LENGTH; j++)
+          retrieved_fingerprints[i][j] = '\0';
     }
 
   /* Read invalid urls from a file and request a certificate from each. */
@@ -142,15 +155,25 @@ test_request_certificate ()
       correct_fingerprint = strtok(NULL, "' '");
 
       //Get the fingerprint by calling request_certificate
-      retrieved_fingerprint = request_certificate(url);
+      number_of_certs = request_certificate(url, retrieved_fingerprints);
 
       //Check if the fingerprints are the same
-      test (verify_certificate(correct_fingerprint, retrieved_fingerprint) == 0);
+      test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) != 0);
       printf("tests: %d,  failed: %d\n", __tests, __fails);
+
+      //reset all the characters in each string to null to allow for the
+      //next iteration of fingerprint convers
+      for(i=0; i<MAX_NO_OF_CERTS; i++)
+        for(j=0; j<FPT_LENGTH; j++)
+          retrieved_fingerprints[i][j] = '\0';
     }
 
   fclose (valids);
   fclose (invalids);
+
+  //free memory used for fingerprints
+  for(i=0; i<MAX_NO_OF_CERTS; i++)
+    free(retrieved_fingerprints[i]);
 } // test_request_certificate
 
 

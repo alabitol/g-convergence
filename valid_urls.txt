@@ -10,7 +10,11 @@ https://signin.ebay.com/ws/eBayISAPI.dlli 9D:B6:05:58:62:2A:1F:A3:EF:5C:06:83:67
 https://www.usaa.com/inet/ent_logon/ent_login_redirect.jsp 0F:D0:A1:A4:1A:AD:50:CA:D5:A1:AD:DD:9F:C2:9C:FC:D9:06:DF:8A
 https://www.amazon.com/gp/css/homepage.html/ref=gno_yam_ya 88:83:E4:5B:6C:20:54:21:2D:86:AA:2B:E6:DA:0A:9F:D5:AE:80:79
 https://www.paypal.com/ D8:46:52:21:46:7A:0D:15:3D:F0:9F:2E:AF:6D:43:90:02:13:9A:68
+<<<<<<< HEAD
 https://www.us.hsbc.com/1/2/3/personal/online-services/personal-internet-banking/log-on 4A:3A:C2:BE:28:13:F9:67:D6:37:6A:75:9E:4E:92:82:20:96:05:39
+=======
+https://www.us.hsbc.com/1/2/3/personal/online-services/personal-internet-banking/log-on F2:B7:9C:84:C9:5D:82:E4:E3:C3:B0:C0:A9:3D:3B:1A:E5:80:60:EF
+>>>>>>> experimental
 https://www.wellsfargo.com/ 35:7F:C7:B6:BF:99:39:73:DF:92:BA:F6:D9:A2:C7:3E:F0:A3:49:D6
 https://www.onpointcu.com/ 3B:12:73:29:29:D7:BD:E3:1C:E1:34:B0:37:17:27:EA:13:12:F1:69
 https://login.live.com/ F4:87:29:C1:0E:AB:49:5C:C2:1C:EF:59:C1:DE:1B:1A:6E:F9:C0:58

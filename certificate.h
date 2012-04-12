@@ -10,6 +10,7 @@
 
 #include "notary.h"
 
+<<<<<<< HEAD
 /* Determine if a character is a hexadecimal character. 
  * Return 1 if it is, else return 0.
  */
@@ -54,12 +55,25 @@ static char* get_fingerprint_from_cert (char* cert);
  * Returns pointer to the fingerprint if successful, otherwise returns an error.
  */
 char* request_certificate (const char *url);
+=======
+/* Requests a certificate from the website given by the url
+   This function calculates and returns the fingerprint of the 
+   requested certificate
+*/
+int 
+request_certificate (const char *url, char** fingerprints);
+>>>>>>> experimental
 
 /* Verifies that the received certificate from the website matches with the
  * fingerprint from the user. Returns 1 if fingerprints match. Otherwise,
  * returns 0.
  */
+<<<<<<< HEAD
 int verify_certificate (const char *fingerprint_from_client, char *fingerprint_from_website);
+=======
+int
+verify_certificate (const char *fingerprint_from_client, char **fingerprints_from_website, int num_of_website_certs);
+>>>>>>> experimental
 
 /* Verifies that a fingerprint has the correct format. */
 int verify_fingerprint_format (char *fingerprint);
