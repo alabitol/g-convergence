@@ -103,8 +103,17 @@ answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
    (Example 5).
  */
 
-int answer_to_HTTP_connection();
-int answer_to_4242_connection();
+int answer_to_HTTP_connection(void *cls, struct MHD_Connection *connection,
+    const char *url, const char *method,
+    const char *version, const char *upload_data,
+    size_t *upload_data_size, void **con_cls)
+{ return 0; }
+
+int answer_to_4242_connection(void *cls, struct MHD_Connection *connection,
+    const char *url, const char *method,
+    const char *version, const char *upload_data,
+    size_t *upload_data_size, void **con_cls)
+{ return 0; }
 
 void
 request_completed (void *cls, struct MHD_Connection *connection,

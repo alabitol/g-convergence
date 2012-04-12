@@ -28,3 +28,4 @@ cache.o: cache.c
 
 clean:
 	/bin/rm -f ${OBJS} \#*# .#*
+	/bin/rm notary
