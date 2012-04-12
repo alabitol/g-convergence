@@ -15,7 +15,7 @@ test: notary-test.c ${OBJS}
 	${CC} -o $@ $^ ${CURLFLAG} ${MHDFLAG} ${SSLFLAG} ${CFLAGS}
 
 connection.o: connection.c
-	${CC} -c -o $@ $^
+	${CC} -c -o $@ $^ ${MHDFLAG}
 
 certificate.o: certificate.c
 	${CC} -c -o $@ $^
