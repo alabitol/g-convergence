@@ -250,15 +250,21 @@ verify_certificate (const char *fingerprint_from_client,
 {
   //Change the case of the fingerprint_from_website to ensure that it
   //is similar to the case of fingerprint_from_client
-  int result_of_comparison;
+  int result_of_comparison = 
+	strcmp(fingerprint_from_client, fingerprint_from_website);
 
-  to_upper_case(fingerprint_from_website);
-  to_upper_case(fingerprint_from_client);
+  if (result_of_comparison < 0)
+  {
+    to_upper_case(fingerprint_from_website);
+  }
 
-  result_of_comparison = 
-    strcmp(fingerprint_from_client, fingerprint_from_website);
-  
-  return !result_of_comparison; 
+  else
+    if(result_of_comparison > 0)
+    {
+     to_lower_case(fingerprint_from_website);
+    }
+
+  return !strcmp(fingerprint_from_client, fingerprint_from_website);
 } // verify_certificate
 
 
