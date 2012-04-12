@@ -14,13 +14,13 @@ notary: notary.c ${OBJS}
 test: notary-test.c ${OBJS}
 	${CC} -o $@ $^ ${CURLFLAG} ${MHDFLAG} ${SSLFLAG} ${CFLAGS}
 
-connection.o: connection.c
-	${CC} -c -o $@ $^ ${MHDFLAG}
+connection.o: connection.c response.c
+	${CC} -c  $^
 
 certificate.o: certificate.c
 	${CC} -c -o $@ $^
 
-response.o: response.c
+response.o: response.c certificate.c
 	${CC} -c -o $@ $^
 
 cache.o: cache.c
