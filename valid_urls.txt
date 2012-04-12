@@ -1,5 +1,5 @@
 https://www.facebook.com BF:E1:FE:03:10:E9:CB:DC:96:BF:3D:AA:6E:C6:03:E5:31:CD:A9:9C
-https://encrypted.google.com ED:2E:18:55:EE:6B:CC:4C:CB:8B:11:A8:74:5C:97:9E:1D:42:B5:BE
+https://encrypted.google.com E2:9E:46:29:A0:FD:3C:57:A0:68:30:C5:0A:45:97:63:BF:8D:75:FC
 https://twitter.com EA:9D:EF:D6:33:61:D9:76:71:E1:6C:68:9F:54:A6:59:D7:F1:0E:66
 https://www.linkedin.com 68:C8:18:57:3D:39:55:B6:60:34:14:54:70:32:CB:41:A0:9D:0B:06
 https://mail.grinnell.edu/owa 45:24:40:53:4F:B4:7C:A6:C6:09:F4:B3:FA:DE:6A:DD:21:56:35:ED
@@ -10,11 +10,7 @@ https://signin.ebay.com/ws/eBayISAPI.dlli 9D:B6:05:58:62:2A:1F:A3:EF:5C:06:83:67
 https://www.usaa.com/inet/ent_logon/ent_login_redirect.jsp 0F:D0:A1:A4:1A:AD:50:CA:D5:A1:AD:DD:9F:C2:9C:FC:D9:06:DF:8A
 https://www.amazon.com/gp/css/homepage.html/ref=gno_yam_ya 88:83:E4:5B:6C:20:54:21:2D:86:AA:2B:E6:DA:0A:9F:D5:AE:80:79
 https://www.paypal.com/ D8:46:52:21:46:7A:0D:15:3D:F0:9F:2E:AF:6D:43:90:02:13:9A:68
-<<<<<<< HEAD
-https://www.us.hsbc.com/1/2/3/personal/online-services/personal-internet-banking/log-on 4A:3A:C2:BE:28:13:F9:67:D6:37:6A:75:9E:4E:92:82:20:96:05:39
-=======
 https://www.us.hsbc.com/1/2/3/personal/online-services/personal-internet-banking/log-on F2:B7:9C:84:C9:5D:82:E4:E3:C3:B0:C0:A9:3D:3B:1A:E5:80:60:EF
->>>>>>> experimental
 https://www.wellsfargo.com/ 35:7F:C7:B6:BF:99:39:73:DF:92:BA:F6:D9:A2:C7:3E:F0:A3:49:D6
 https://www.onpointcu.com/ 3B:12:73:29:29:D7:BD:E3:1C:E1:34:B0:37:17:27:EA:13:12:F1:69
 https://login.live.com/ F4:87:29:C1:0E:AB:49:5C:C2:1C:EF:59:C1:DE:1B:1A:6E:F9:C0:58

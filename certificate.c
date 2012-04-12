@@ -76,32 +76,11 @@ static void to_upper_case(char* fingerprint)
     }
 }
 
-<<<<<<< HEAD
-/**
- * Changes fingerprint (hex characters) to lower case.
- */
- static void to_lower_case(char* fingerprint)
-{
-  int i=0;
-  while(fingerprint[i])
-    {
-      if( (fingerprint[i] != ':') && 
-          (fingerprint[i] >= 'A') && 
-          (fingerprint[i] <= 'F'))
-        fingerprint[i] += 32;
-      i++;
-    }
-}
-
 
 /**
  * This function converts the PEM certificate to its corresponding SHA1 fingerprint
- * returns pointer to the fingerprint. 
-=======
-/*
-This function converts the PEM certificate to its corresponding SHA1 fingerprint
->>>>>>> experimental
- */
+ * returns pointer to the fingerprint.
+ **/
 static void get_fingerprint_from_cert (char** cert, char** fingerprints, int num_of_certs)
 {
   ssize_t len;
@@ -173,15 +152,10 @@ static void get_fingerprint_from_cert (char** cert, char** fingerprints, int num
 
 }//get_fingerprint_from_cert
 
-<<<<<<< HEAD
-/* Requests a certificate from the website given by the url. Saved the
- * fingerprint of the certificate into fingerprint_from_website. 
- * Returns pointer to the fingerprint if successful, otherwise returns an error.
-=======
+
 /* Requests the certificates from the website given by the url, and stores
  * the fingerprints of the corresponding certificates in the output
  * parameter fingerprints. Returns the number of fingerprints retrieved.
->>>>>>> experimental
  */
 int request_certificate (const char *url, char** fingerprints)
 {  
@@ -214,21 +188,7 @@ int request_certificate (const char *url, char** fingerprints)
       struct curl_certinfo *ci = NULL;
       res = curl_easy_getinfo(curl, CURLINFO_CERTINFO, &ci);
       number_of_certs = ci->num_of_certs;
-<<<<<<< HEAD
-      
-      //Get the certificate. 
-      if((!res) && ci)
-        {
-          struct curl_slist *slist;
-          for(slist = ci->certinfo[0]; slist; slist = slist->next)
-            if(!strncmp(slist->data, "Cert:", 5))
-              {
-                certificate = slist->data+5;
-              }  
-          
-          //Extract fingerprint
-          char* fingerprint = get_fingerprint_from_cert(certificate);
-=======
+
       //array to store the retrieved certificates
       char* certificates[number_of_certs];
 
@@ -248,84 +208,42 @@ int request_certificate (const char *url, char** fingerprints)
 
           //retrieve the fingerprints from these certificates
           get_fingerprint_from_cert(certificates, fingerprints, number_of_certs);
->>>>>>> experimental
 
           //Cleanup Functions
           //Note that curl_easy_cleanup(curl) is not called here in case another
           //connection is being made
           curl_global_cleanup();
-<<<<<<< HEAD
 
-          return fingerprint;
-=======
           return number_of_certs;
-        }
-      else
-        {
-          fprintf(stderr, "Could not retrieve certificates from server\n");
-          curl_cleanup(curl);
-          return 0;
->>>>>>> experimental
         }
       else
         {
           fprintf(stderr, "Could not retrieve certificate from server\n");
           curl_cleanup(curl);
           return 0;
-        } //If res is an error, return an error and exit.
+        } //If the certificate cannot be retrieved from the server, return 0
     }
     else
       {
-        fprintf(stderr, "Could not establish a connection\n");
+        fprintf(stderr, "Could not establish a connection with the server\n");
         curl_cleanup(curl);
         return 0;
-<<<<<<< HEAD
-      } //If ci has not been initialized, return an error and exit.
-=======
-      }
->>>>>>> experimental
+      } //If curl could not establish a connection with server, return 0
   }
   else
     {
       fprintf(stderr, "Could not initialize CURL\n");
       curl_cleanup(curl);
       return 0;
-    }
-<<<<<<< HEAD
+    } //if curl could not be initialized, return 0
 }
- // request_certificate
-=======
-} // request_certificate
->>>>>>> experimental
+// request_certificate
+
 
 /* Verifies that the fingerprint from the website matches the
  * fingerprint from the user. Returns 1 if fingerprints match. Otherwise,
  * returns 0.
- */
-int
-<<<<<<< HEAD
-verify_certificate (const char *fingerprint_from_client, 
-                    char *fingerprint_from_website)
-{
-  //Change the case of the fingerprint_from_website to ensure that it
-  //is similar to the case of fingerprint_from_client
-  int result_of_comparison = 
-	strcmp(fingerprint_from_client, fingerprint_from_website);
-
-  if (result_of_comparison < 0)
-  {
-    to_upper_case(fingerprint_from_website);
-  }
-
-  else
-    if(result_of_comparison > 0)
-    {
-     to_lower_case(fingerprint_from_website);
-    }
-
-  return !strcmp(fingerprint_from_client, fingerprint_from_website);
-=======
-verify_certificate (const char *fingerprint_from_client, char **fingerprints_from_website, int num_of_website_certs)
+ */int verify_certificate (const char *fingerprint_from_client, char **fingerprints_from_website, int num_of_website_certs)
 {
   //Change the case of the fingerprints_from_website to ensure that it
   //is similar to the case of fingerprints_from_client
@@ -356,7 +274,6 @@ verify_certificate (const char *fingerprint_from_client, char **fingerprints_fro
   free(client_fingerprint);
   return result_of_comparison;
 
->>>>>>> experimental
 } // verify_certificate
 
 

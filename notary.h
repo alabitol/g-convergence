@@ -49,7 +49,6 @@ struct connection_info_struct
   int answer_code;
 };
 
-<<<<<<< HEAD
 /* Begins logging of server activity to a log file. 
  */
 int initiateLogging ();
@@ -58,13 +57,9 @@ int initiateLogging ();
  * if she invokes it with --help flag. */
 void print_usage ();
 
-/*Set the default notary option */
-static char* set_default_notary_option (char* default_string);
-
 /* Set the appropriate notary option. */
 int set_notary_option (char *option, int *i, char *argv[]);
-=======
+
 #define FPT_LENGTH 60
->>>>>>> experimental
 
 #endif // NOTARY_H
