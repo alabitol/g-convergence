@@ -1,0 +1,8 @@
+# Do not include any editor temporary files in the repo
+
+# Ignore vim swap files
+*.swp
+
+# Ignore emacs backup files and temporary files
+*~
+#*
