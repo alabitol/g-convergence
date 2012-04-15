@@ -1,7 +1,7 @@
 /******************************************************************************
  * Authors: g-coders
  * Created: March 11, 2012
- * Revised: April 11, 2012
+ * Revised: April 15, 2012
  * Description: This is a header file which will be included in all other
  * header files of the project
  ******************************************************************************/
@@ -34,32 +34,27 @@
 /* The number of simultaneous requests. */
 #define MAX_CLIENTS 15
 #define POST_BUFFER_SIZE 512
-#define GET 0
-#define POST 1
 
 #define PORT 8888
+
+/* GET and POST are the only requests notary handles. */
+enum connection_type
+  {
+    GET = 0,
+    POST = 1
+  };
 
 /* This datastructure contains information about an individual connection from
  * a client. 
  */
 struct connection_info_struct
 {
-  int connection_type;
+  enum connection_type connection_type;
   const char *answer_string;
   int answer_code;
 };
 
-/* Begins logging of server activity to a log file. 
- */
-int initiateLogging ();
-
-/* Print a helpful usage message if the user calls notary incorrectly or
- * if she invokes it with --help flag. */
-void print_usage ();
-
-/* Set the appropriate notary option. */
-int set_notary_option (char *option, int *i, char *argv[]);
-
+/* Length of certificate fingerprints we are dealing with. */
 #define FPT_LENGTH 60
 
 #endif // NOTARY_H
