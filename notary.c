@@ -1,7 +1,7 @@
 /*****************************************************************************
  * Authors: g-coders
  * Created: February 27, 2012
- * Revised: March 12, 2012
+ * Revised: April 15, 2012
  * Description: This program starts the notary server which listens for
  * verification requests from clients.
  ******************************************************************************/
@@ -11,18 +11,16 @@
 #include "certificate.h"
 #include "response.h"
 
-/* Begins logging of server activity to a log file. 
- * IMPLEMENT LATER.
- */
-int 
-initiateLogging ()
+/* Begins logging of server activity to a log file.  */
+static void
+initiate_logging ()
 {
-  return 1;
-}
+  
+} // initiate_logging
 
 /* Print a helpful usage message if the user calls notary incorrectly or
  * if she invokes it with --help flag. */
-void 
+static void 
 print_usage ()
 {
   printf ("usage: notary <options>\n \
@@ -55,12 +53,12 @@ set_default_notary_option (char* default_string)
 
 
 /* Set the appropriate notary option. */
-int
+static int
 set_notary_option (char *option, int *i, char *argv[])
 {
   /* Reallocate the string. */
   char *temp;
-  temp = realloc (option, sizeof (char) * strlen (argv[++(*i)]));
+  temp = realloc(option, sizeof(char) * (strlen(argv[++(*i)]) + 1));
   if (temp == NULL)
   {
     /* Figure out how to print out the option for which memory could not be
@@ -71,7 +69,7 @@ set_notary_option (char *option, int *i, char *argv[])
   }
 
   option = temp;
-  strcpy(option, argv[*i]);
+  strncpy(option, argv[*i], sizeof(char) * strlen(argv[(*i)]));
 
   return 1;
 }
@@ -176,7 +174,7 @@ int main (int argc, char *argv[])
 
 
   /* Find a logging c library. */
-  initiateLogging ();
+  initiate_logging ();
 
   /* Make sure we can start the daemon in the background. */
 
@@ -211,13 +209,15 @@ int main (int argc, char *argv[])
                              );
 
   if (ssl_daemon == NULL)
-  {
-    fprintf (stderr, "Error: Failed to start the MHD SSL daemon\n");
+    {
+      fprintf (stderr, "Error: Failed to start the MHD SSL daemon\n");
     return 1;
-  }
+    }
   else
-    printf ("MHD SSL daemon is listening on port %d\n", ssl_port);
-
+    {
+      printf ("MHD SSL daemon is listening on port %d\n", ssl_port);
+    }
+  
  
   http_daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION, 
                              http_port, 
@@ -232,13 +232,15 @@ int main (int argc, char *argv[])
                              );
 
   if (http_daemon == NULL)
-  {
-    fprintf (stderr, "Error: Failed to start the MHD HTTP daemon\n");
-    return 1;
-  }
+    {
+      fprintf (stderr, "Error: Failed to start the MHD HTTP daemon\n");
+      return 1;
+    }
   else
-    printf ("MHD HTTP daemon is listening on port %d\n", http_port);
-
+    {
+      printf ("MHD HTTP daemon is listening on port %d\n", http_port);
+    }
+  
   fourtwo_daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION, 
                              4242, 
 			     NULL, 
@@ -257,8 +259,9 @@ int main (int argc, char *argv[])
     return 1;
   }
   else
-    printf ("MHD 4242 daemon is listening on port 4242\n");
-
+    {
+      printf ("MHD 4242 daemon is listening on port 4242\n");
+    }
 
   /* Prevent the server from stopping immediately after starting. We might
    * want to change this approach in the future. */
@@ -266,8 +269,11 @@ int main (int argc, char *argv[])
 
   /* Stop the  MHD daemon. */
   MHD_stop_daemon (ssl_daemon);
+  printf ("SSL daemon has terminated\n");
   MHD_stop_daemon (http_daemon);
+  printf ("HTTP daemon has terminated\n");
   MHD_stop_daemon (fourtwo_daemon);
+  printf ("4242 daemon has terminated\n");
 
   return 0;
 }
