@@ -96,49 +96,84 @@ int main (int argc, char *argv[])
   group = set_default_notary_option("nogroup");
   bool debug = false;
   bool foreground = false;
-  /* Implement the backend option as an extension */
-  // char backend[]; 
 
-  /* Process command line arguments. */
-  for (i = 1; i < argc; i++)
-  {
-    if ((! strcmp (argv[i], "-help")) || 
-        (! strcmp (argv[i], "--help")) ||
-        (! strcmp (argv[i], "-h")))
+  /* /\* Process command line arguments. *\/ */
+  /* for (i = 1; i < argc; i++) */
+  /* { */
+  /*   if ((! strcmp (argv[i], "-help")) ||  */
+  /*       (! strcmp (argv[i], "--help")) || */
+  /*       (! strcmp (argv[i], "-h"))) */
+  /*   { */
+  /*     print_usage (); */
+  /*   } */
+  /*   else  */
+  /*     { */
+  /*       char *arg = argv[i]; */
+  /*       char c = arg[1]; */
+
+  /*       switch (c) */
+  /*         { */
+  /*         case 'p': */
+  /*           http_port = atoi (argv[++i]); */
+  /*         case 's': */
+  /*           ssl_port = atoi (argv[++i]); */
+  /*         case 'i': */
+  /*           set_notary_option (ip, &i, argv); */
+  /*           printf("Option is: %s\n", ip); */
+  /*           break; */
+  /*         case 'c': */
+  /*           set_notary_option (certificate_file, &i, argv); */
+  /*         case 'k': */
+  /*           set_notary_option (key_file, &i, argv); */
+  /*         case 'u': */
+  /*           set_notary_option (username, &i, argv); */
+  /*         case 'g': */
+  /*           set_notary_option (group, &i, argv); */
+  /*         case 'd': */
+  /*           debug = true; */
+  /*         case 'f': */
+  /*           foreground = true; */
+  /*         } */
+  /*     } */
+  /* } */
+
+  opterr = 0;
+     
+  while ((c = getopt (argc, argv, "psi:cku:gdf:")) != -1)
     {
-      print_usage ();
+      switch (c)
+        {
+        case 'p':
+          http_port = atoi (argv[++i]);
+          break;
+        case 's':
+          ssl_port = atoi (argv[++i]);
+          break;
+        case 'c':
+          cvalue = optarg;
+          break;
+        case '?':
+          if (optopt == 'c')
+            fprintf (stderr, "Option -%c requires an argument.\n", optopt);
+          else if (isprint (optopt))
+            fprintf (stderr, "Unknown option `-%c'.\n", optopt);
+          else
+            fprintf (stderr,
+                     "Unknown option character `\\x%x'.\n",
+                     optopt);
+          return 1;
+        default:
+          abort ();
+        }
     }
-    else 
-      {
-       char *arg = argv[i];
-       char c = arg[1];
+     
+       printf ("aflag = %d, bflag = %d, cvalue = %s\n",
+               aflag, bflag, cvalue);
+     
+       for (index = optind; index < argc; index++)
+         printf ("Non-option argument %s\n", argv[index]);
 
-       switch (c)
-         {
-         case 'p':
-           http_port = atoi (argv[++i]);
-         case 's':
-           ssl_port = atoi (argv[++i]);
-         case 'i':
-           set_notary_option (ip, &i, argv);
-         case 'c':
-           set_notary_option (certificate_file, &i, argv);
-         case 'k':
-           set_notary_option (key_file, &i, argv);
-         case 'u':
-           set_notary_option (username, &i, argv);
-         case 'g':
-           set_notary_option (group, &i, argv);
-         case 'd':
-           debug = true;
-         case 'f':
-           foreground = true;
-      }
-   // else if (! strcmp (argv[i], "-b"))
-   // {
-   //   set_notary_option (backend, &i, argv);
-   // }
-  }
+
 
   /* Find a logging c library. */
   initiateLogging ();
@@ -235,5 +270,4 @@ int main (int argc, char *argv[])
   MHD_stop_daemon (fourtwo_daemon);
 
   return 0;
-  }
 }
