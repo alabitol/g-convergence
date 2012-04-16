@@ -189,7 +189,7 @@ test_verify_certificate ()
   result = verify_certificate(c1, c10, 1);
   test(result == 1);
   //If the certificate doesn't match
-  result = verify_certificate(c1, c11, 1);x
+  result = verify_certificate(c1, c11, 1);
   test(result == 0);
 
   //If there are multiple certificates from the website:
@@ -205,6 +205,9 @@ test_verify_certificate ()
   //If none of the certificates match
   result = verify_certificate(c1, no_match, 5);
   test (result == 0);
+
+  //Additional tests: lower case fingerprints 
+ 
 } // test_verify_certificate
 
 void 
@@ -257,10 +260,8 @@ test_request_certificate ()
 
       //Get the fingerprint by calling request_certificate
       number_of_certs = request_certificate(url, retrieved_fingerprints);
-      printf("%d certs found\n", number_of_certs);
 
       test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) == 0);
-      printf("tests: %d,  failed: %d\n", __tests, __fails);
 
       //reset all the characters in each string to null to allow for the
       //next iteration of fingerprint conversion
@@ -288,7 +289,6 @@ test_request_certificate ()
 
       //Check if the fingerprints are the same
       test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) != 0);
-      printf("tests: %d,  failed: %d\n", __tests, __fails);
 
       //reset all the characters in each string to null to allow for the
       //next iteration of fingerprint convers
@@ -407,7 +407,7 @@ main (int argc, char *argv[])
   /* Test all functions here. */
   //test_convergence ();
   //test_request_completed ();
-  //test_retrieve_response ();
+  test_retrieve_response ();
   //test_send_response ();
   //test_request_certificate ();
   //test_verify_fingerprint_format();
@@ -415,7 +415,9 @@ main (int argc, char *argv[])
   //test_cache_remove ();
   //test_cache_insert ();
   //test_cache_update ();
-  test_verify_certificate();
+  //test_verify_certificate();
+
+  printf("tests: %d,  failed: %d\n", __tests, __fails);
 
   return 0;
 } // main
