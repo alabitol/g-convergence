@@ -53,25 +53,22 @@ set_default_notary_option (char* default_string)
 
 
 /* Set the appropriate notary option. */
-static int
-set_notary_option (char *option, int *i, char *argv[])
+static void
+set_notary_option (char *option, char* argument)
 {
   /* Reallocate the string. */
   char *temp;
-  temp = realloc(option, sizeof(char) * (strlen(argv[++(*i)]) + 1));
+  temp = realloc(option, sizeof(char) * (strlen(argument) + 1));
   if (temp == NULL)
-  {
-    /* Figure out how to print out the option for which memory could not be
-     * allocated.
-     */
-    fprintf (stderr, "Could not allocate memory for ...\n");
-    return 0;
-  }
+    {
+      /* Figure out how to print out the option for which memory could not be
+       * allocated.
+       */
+      fprintf (stderr, "Could not allocate memory for %s\n", argument);
+      exit(1);
+    }
 
-  option = temp;
-  strncpy(option, argv[*i], sizeof(char) * strlen(argv[(*i)]));
-
-  return 1;
+  strcpy(option, argument);
 }
 
 int main (int argc, char *argv[])
@@ -95,83 +92,48 @@ int main (int argc, char *argv[])
   bool debug = false;
   bool foreground = false;
 
-  /* /\* Process command line arguments. *\/ */
-  /* for (i = 1; i < argc; i++) */
-  /* { */
-  /*   if ((! strcmp (argv[i], "-help")) ||  */
-  /*       (! strcmp (argv[i], "--help")) || */
-  /*       (! strcmp (argv[i], "-h"))) */
-  /*   { */
-  /*     print_usage (); */
-  /*   } */
-  /*   else  */
-  /*     { */
-  /*       char *arg = argv[i]; */
-  /*       char c = arg[1]; */
-
-  /*       switch (c) */
-  /*         { */
-  /*         case 'p': */
-  /*           http_port = atoi (argv[++i]); */
-  /*         case 's': */
-  /*           ssl_port = atoi (argv[++i]); */
-  /*         case 'i': */
-  /*           set_notary_option (ip, &i, argv); */
-  /*           printf("Option is: %s\n", ip); */
-  /*           break; */
-  /*         case 'c': */
-  /*           set_notary_option (certificate_file, &i, argv); */
-  /*         case 'k': */
-  /*           set_notary_option (key_file, &i, argv); */
-  /*         case 'u': */
-  /*           set_notary_option (username, &i, argv); */
-  /*         case 'g': */
-  /*           set_notary_option (group, &i, argv); */
-  /*         case 'd': */
-  /*           debug = true; */
-  /*         case 'f': */
-  /*           foreground = true; */
-  /*         } */
-  /*     } */
-  /* } */
-
+  char c;
   opterr = 0;
-     
-  while ((c = getopt (argc, argv, "psi:cku:gdf:")) != -1)
+  
+  while ((c = getopt (argc, argv, "p:s:i:c:k:u:g:df")) != -1)
     {
       switch (c)
         {
         case 'p':
-          http_port = atoi (argv[++i]);
+          http_port = atoi (optarg);
           break;
         case 's':
-          ssl_port = atoi (argv[++i]);
+          ssl_port = atoi (optarg);
+          break;
+        case 'i':
+          set_notary_option (ip, optarg);
           break;
         case 'c':
-          cvalue = optarg;
+          set_notary_option (certificate_file, optarg);
           break;
-        case '?':
-          if (optopt == 'c')
-            fprintf (stderr, "Option -%c requires an argument.\n", optopt);
-          else if (isprint (optopt))
-            fprintf (stderr, "Unknown option `-%c'.\n", optopt);
-          else
-            fprintf (stderr,
-                     "Unknown option character `\\x%x'.\n",
-                     optopt);
+        case 'k':
+          printf("%s\n", optarg);
+          set_notary_option (key_file, optarg);
+          break;
+        case 'u':
+          set_notary_option (username, optarg);
+          break;
+        case 'g':
+          set_notary_option (group, optarg);
+          break;
+        case 'd':
+          debug = true;
+          break;
+        case 'f':
+          foreground = true;
+          break;
+        case '?': //an unknown character was encountered
+          print_usage();
           return 1;
         default:
           abort ();
         }
     }
-     
-       printf ("aflag = %d, bflag = %d, cvalue = %s\n",
-               aflag, bflag, cvalue);
-     
-       for (index = optind; index < argc; index++)
-         printf ("Non-option argument %s\n", argv[index]);
-
-
 
   /* Find a logging c library. */
   initiate_logging ();

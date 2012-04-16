@@ -29,6 +29,7 @@
 #include <openssl/sha.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 
 /* The number of simultaneous requests. */

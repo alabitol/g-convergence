@@ -15,25 +15,6 @@
 // Helpers
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-
-/* Determine if a character is a hexadecimal character. 
- * Return 1 if it is, else return 0.
- */
-int is_hex_char (char c)
-{
-  if ((c >= '0' && c <= '9') ||
-      (c >= 'a' && c <= 'f') ||
-      (c >= 'A' && c <= 'F'))
-  {
-    return 1;
-  }
-  else
-  {
-    return 0;
-  }
-} // is_hex_char
-
-
 /**
  * Write Function: tell the curl functions where to write the data they
  * receive from a network
@@ -75,7 +56,6 @@ static void to_upper_case(char* fingerprint)
       i++;
     }
 }
-
 
 /**
  * This function converts the PEM certificate to its corresponding SHA1 fingerprint
@@ -153,10 +133,11 @@ static void get_fingerprint_from_cert (char** cert, char** fingerprints, int num
 }//get_fingerprint_from_cert
 
 
-/* Requests the certificates from the website given by the url, and stores
+/** 
+ *  Requests the certificates from the website given by the url, and stores
  * the fingerprints of the corresponding certificates in the output
  * parameter fingerprints. Returns the number of fingerprints retrieved.
- */
+ **/
 int request_certificate (const char *url, char** fingerprints)
 {  
   CURL *curl;
@@ -243,37 +224,30 @@ int request_certificate (const char *url, char** fingerprints)
 /* Verifies that the fingerprint from the website matches the
  * fingerprint from the user. Returns 1 if fingerprints match. Otherwise,
  * returns 0.
- */int verify_certificate (const char *fingerprint_from_client, char **fingerprints_from_website, int num_of_website_certs)
+ */
+int verify_certificate (const char *fingerprint_from_client, char **fingerprints_from_website, int num_of_website_certs)
 {
-  //Change the case of the fingerprints_from_website to ensure that it
-  //is similar to the case of fingerprints_from_client
+  //variable to store the result of the fingerprint comparison
+  int result_of_comparison = 0;
+
+  //this variable is used to store the fingerprint from the client
+  //in order for the fingerprint to be changed to uppercase
   char* client_fingerprint = malloc(sizeof(char) * FPT_LENGTH);
   strcpy(client_fingerprint, fingerprint_from_client);
   to_upper_case(client_fingerprint);
 
-  //this loop changes all the fingerprints to upper-case
   int i;
-  for(i=0; i<num_of_website_certs; i++)
+  for(i=0; i< num_of_website_certs; i++)
     {
       to_upper_case(fingerprints_from_website[i]);
-    }
-
-  //this variable keeps track of the result of the comparison
-  int result_of_comparison = 1;
-
-  //this compares the fingerprint_from_client to the fingerprints from the website
-  for(i=0; i<num_of_website_certs; i++)
-    {
-      if(result_of_comparison != 0)
+      if(strcmp(client_fingerprint, fingerprints_from_website[i]) == 0)
         {
-          result_of_comparison = strcmp(client_fingerprint, fingerprints_from_website[i]);
+          result_of_comparison = 1;
+          break;
         }
-      else break;
     }
 
-  free(client_fingerprint);
   return result_of_comparison;
-
 } // verify_certificate
 
 
@@ -293,58 +267,31 @@ verify_fingerprint_format (char *fingerprint)
    * 19 sequences of two hex and one colon characters.
    */
   for (i = 0; i < fpt_length-2; i++)
-  {
-    /* Check if the first two characters are hex and the third a colon. */
-    if (is_hex_char (fingerprint[i]))
-      i++;
-    else 
-      return 0;
+    {
+      /* Check if the first two characters are hex and the third a colon. */
+      if (isxdigit (fingerprint[i]))
+        i++;
+      else 
+        return 0;
 
-    if (is_hex_char (fingerprint[i]))
-      i++;
-    else
-      return 0;
+      if (isxdigit (fingerprint[i]))
+        i++;
+      else
+        return 0;
 
-    if (! (fingerprint[i] == ':') )
-      return 0;
+      if (! (fingerprint[i] == ':') )
+        return 0;
 
-  }
+    }
 
   /* Check the last two characters. */
-  if (is_hex_char (fingerprint[i]))
+  if (isxdigit (fingerprint[i]))
     i++;
   else 
     return 0;
 
-  if (is_hex_char (fingerprint[i]))
+  if (isxdigit (fingerprint[i]))
     return 1;
   else
     return 0;
 } // verify_fingerprint_format
-
-
-/* int main() */
-/* { */
-
-/*   char* fingerprints[3]; */
-
-/*   int i; */
-/*   for(i=0; i<3; i++) */
-/*     { */
-/*       fingerprints[i] = malloc(sizeof(char) * 15); */
-/*     } */
-
-/*   strcpy(fingerprints[0], "tolu"); */
-/*   strcpy(fingerprints[1], "44:44:5a"); */
-/*   strcpy(fingerprints[2], "0f:22:ee:ee:aa"); */
-
-/*   char* original = malloc(sizeof(char) * 15); */
-
-/*   strcpy(original, "0F:22:EE:EE:AA"); */
-
-/*   int result = verify_certificate(original, fingerprints, 3); */
-/*   printf("%s\n", original); */
-/*   printf("result is: %d\n", result); */
-
-/*   return 0; */
-/* } */

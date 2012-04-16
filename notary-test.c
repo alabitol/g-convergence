@@ -12,19 +12,20 @@
 #include "certificate.h"
 #include "response.h"
 
-/* A macro that defines an enhanced assert statement. */
-#define test(exp) \
-do { ++__tests; \
-if (! (exp)) { ++__fails; fprintf (stderr, "Test failed: %s at line: %d\n", \
-                                   #exp, __LINE__); }} \
-while (0)
-
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Globals
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #define MAX_NO_OF_CERTS 7
 int __tests = 0;
 int __fails = 0;
+
+/* A macro that defines an enhanced assert statement. */
+#define test(exp)                                                       \
+  do { ++__tests;                                                       \
+    if (! (exp)) { ++__fails; fprintf (stderr, "Test failed: %s at line: %d\n", \
+                                       #exp, __LINE__); }               \
+    printf("Tests ran: %d, Tests Failed: %d\n", __tests, __fails); }     \
+  while (0)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Helpers
@@ -130,8 +131,7 @@ test_request_certificate ()
       number_of_certs = request_certificate(url, retrieved_fingerprints);
       printf("%d certs found\n", number_of_certs);
 
-      test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) == 0);
-      printf("tests: %d,  failed: %d\n", __tests, __fails);
+      test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) == 1);
 
       //reset all the characters in each string to null to allow for the
       //next iteration of fingerprint conversion
@@ -158,8 +158,7 @@ test_request_certificate ()
       number_of_certs = request_certificate(url, retrieved_fingerprints);
 
       //Check if the fingerprints are the same
-      test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) != 0);
-      printf("tests: %d,  failed: %d\n", __tests, __fails);
+      test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) == 0);
 
       //reset all the characters in each string to null to allow for the
       //next iteration of fingerprint convers
@@ -280,8 +279,10 @@ main (int argc, char *argv[])
   //test_request_completed ();
   //test_retrieve_post_response ();
   //test_send_response ();
+  printf("Testing request_certificate\n");
   test_request_certificate ();
-  //test_verify_fingerprint_format();
+  printf("Now testing verify_fingerprint_format\n");
+  test_verify_fingerprint_format();
   //test_is_in_cache ();
   //test_cache_remove ();
   //test_cache_insert ();
