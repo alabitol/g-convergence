@@ -1,16 +1,24 @@
 /*****************************************************************************
  * Authors: g-coders
  * Created: March 10, 2012
- * Revised: March 18, 2012
+ * Revised: April 12, 2012
  * Description: This file includes unit tests for all functions which are part
  * of the convergence system.
  ******************************************************************************/
 
 #include "notary.h"
 #include <malloc.h>
+#include <stdio.h>
 #include "connection.h"
 #include "certificate.h"
 #include "response.h"
+
+/* A macro that defines an enhanced assert statement. */
+#define test(exp) \
+do { ++__tests; \
+if (! (exp)) { ++__fails; fprintf (stderr, "Test failed: %s at line: %d\n", \
+                                   #exp, __LINE__); }} \
+while (0)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Globals
@@ -18,14 +26,6 @@
 #define MAX_NO_OF_CERTS 7
 int __tests = 0;
 int __fails = 0;
-
-/* A macro that defines an enhanced assert statement. */
-#define test(exp)                                                       \
-  do { ++__tests;                                                       \
-    if (! (exp)) { ++__fails; fprintf (stderr, "Test failed: %s at line: %d\n", \
-                                       #exp, __LINE__); }               \
-    printf("Tests ran: %d, Tests Failed: %d\n", __tests, __fails); }     \
-  while (0)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Helpers
@@ -75,9 +75,137 @@ test_request_completed ()
 } // test_request_completed
 
 void 
-test_retrieve_post_response ()
+test_retrieve_response ()
 {
+  /* Construct arguments to pass to retrieve_response. */
+  FILE *valid_urls;
+  FILE *invalid_urls;
+  FILE *invalid_fingerprints;
+  int size = 250;
+  char input_line[size];
+  char *url;
+  char *fingerprint;
+
+  int result = 0;
+
+  valid_urls = fopen("valid_urls.txt", "r");  
+  if (valid_urls == NULL)
+    {
+      fprintf(stderr, "Could not open valid_urls.txt\n");
+      exit(1);
+    }
+
+  invalid_urls = fopen("invalid_urls.txt", "r");  
+  if (invalid_urls == NULL)
+    {
+      fprintf(stderr, "Could not open invalid_urls.txt\n");
+      exit(1);
+    }
+
+  invalid_fingerprints = fopen("invalid_fingerprints.txt", "r");  
+  if (invalid_fingerprints == NULL)
+    {
+      fprintf(stderr, "Could not open invalid_fingerprints.txt\n");
+      exit(1);
+    }
+  
+  /* Construct coninfo_cls. */
+  struct connection_info_struct *coninfo_cls;
+  coninfo_cls = malloc (sizeof (struct connection_info_struct));
+
+  /* Get url and corresponding fingerprint from valid_urls.txt. */
+  /* If fingerprint_from_client matches the fingerprint from website, expect MHD_YES as the return value and answer code as MHD_HTTP_OK */
+  while (fgets (input_line, size, valid_urls) != NULL)
+    {
+      url = strtok(input_line, " ");
+      fingerprint = strtok(NULL, " ");
+
+      /* Call retrieve_response and check its return value. */
+      result = retrieve_response (coninfo_cls, url, fingerprint);
+    
+      test(result == MHD_YES);
+      printf ("code: %d\n", coninfo_cls->answer_code);
+      test(coninfo_cls->answer_code == MHD_HTTP_OK);
+    }//while
+
+  /* If URL is not valid, then expect MHD_NO. */
+  while (fgets (input_line, size, invalid_urls) != NULL)
+    {
+      url = strtok(input_line, " ");
+      fingerprint = strtok(NULL, " ");
+
+      /* Call retrieve_response and check its return value. */
+      result = retrieve_response(coninfo_cls, url, fingerprint);
+
+      /* Check if result is MHD_NO */
+      test(result == MHD_NO);
+    }
+      
+  /* If fingerprint_from_client does not match any fingerprint from website, expect MHD_YES as the return value and answer_code as MHD_HTTP_CONFLICT. */
+  while (fgets (input_line, size, invalid_fingerprints) != NULL)
+    {
+      url = strtok(input_line, " ");
+      fingerprint = strtok(NULL, " ");
+
+      /* Call retrieve_response and check its return value. */
+      result = retrieve_response(coninfo_cls, url, fingerprint);
+
+      test(result == MHD_YES);
+      test(coninfo_cls->answer_code == MHD_HTTP_CONFLICT);
+    }
+
+  /* If the URL is valid but no certificates are returned from the website, expect MHD_NO and answer code is MHD_HTTP_SERVICE_UNAVAILABLE. This is not possible to test directly given our implementation of retrieve_response. */
+
+  //Close valid_urls.txt
+  fclose(valid_urls);
+  fclose(invalid_urls);
+  fclose(invalid_fingerprints);
 } // test_retrieve_post_response
+
+void
+test_verify_certificate ()
+{
+  char *c1 = "BF:E1:FE:03:10:E9:CB:DC:96:BF:3D:AA:6E:C6:03:E5:31:CD:A9:9C";
+  char *c2 = "E2:9E:46:29:A0:FD:3C:57:A0:68:30:C5:0A:45:97:63:BF:8D:75:FC";
+  char *c3 = "BF:E1:FE:03:10:E9:CB:DC:96:BF:3D:AA:6E:C6:03:E5:31:CD:A9:9C";
+  
+  int result = -1;
+  
+  char *c5 = "EA:9D:EF:D6:33:61:D9:76:71:E1:6C:68:9F:54:A6:59:D7:F1:0E:66";
+  char *c6 = "68:C8:18:57:3D:39:55:B6:60:34:14:54:70:32:CB:41:A0:9D:0B:06";
+  char *c7 = "45:24:40:53:4F:B4:7C:A6:C6:09:F4:B3:FA:DE:6A:DD:21:56:35:ED";
+  char *c8 = "C2:2A:30:8D:49:DE:49:32:3B:F1:AF:D9:F8:41:79:E6:A8:ED:65:A6";
+  char *c9 = "03:47:7F:F5:F6:3B:F5:B6:10:C0:7D:65:9A:7B:A9:12:D3:20:83:68";
+
+  char *c10[1] = {c3};
+  char *c11[1] = {c2};
+  char *no_match[5] = {c5, c6, c7, c8, c9};
+  char *last_match[6] = {c5, c6, c7, c8, c9, c1};
+  char *second_match[4] = {c5, c1, c6, c7};
+  char *first_match[4] = {c1, c6, c7, c9};
+
+  //If there is only one certificate from the website:
+  //If the certificate matches
+  result = verify_certificate(c1, c10, 1);
+  test(result == 1);
+  //If the certificate doesn't match
+  result = verify_certificate(c1, c11, 1);x
+  test(result == 0);
+
+  //If there are multiple certificates from the website:
+  //If the first certificate matches
+  result = verify_certificate(c3, first_match, 4);
+  test (result == 1);
+  //If the second certificate matches
+  result = verify_certificate(c3, second_match, 4);
+  test (result == 1);
+  //If the last certificate matches
+  result = verify_certificate(c1, last_match, 6);
+  test (result == 1);
+  //If none of the certificates match
+  result = verify_certificate(c1, no_match, 5);
+  test (result == 0);
+} // test_verify_certificate
 
 void 
 test_send_response ()
@@ -102,10 +230,10 @@ test_request_certificate ()
       exit(1);
     }
 
-  invalids = fopen ("invalid_urls.txt", "r");
+  invalids = fopen ("invalid_fingerprints.txt", "r");
   if (invalids == NULL)
     {
-      fprintf (stderr, "Could not open invalid_urls.txt\n");
+      fprintf (stderr, "Could not open invalid_fingerprints.txt\n");
       exit(1);
     }
 
@@ -131,7 +259,8 @@ test_request_certificate ()
       number_of_certs = request_certificate(url, retrieved_fingerprints);
       printf("%d certs found\n", number_of_certs);
 
-      test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) == 1);
+      test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) == 0);
+      printf("tests: %d,  failed: %d\n", __tests, __fails);
 
       //reset all the characters in each string to null to allow for the
       //next iteration of fingerprint conversion
@@ -158,7 +287,8 @@ test_request_certificate ()
       number_of_certs = request_certificate(url, retrieved_fingerprints);
 
       //Check if the fingerprints are the same
-      test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) == 0);
+      test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) != 0);
+      printf("tests: %d,  failed: %d\n", __tests, __fails);
 
       //reset all the characters in each string to null to allow for the
       //next iteration of fingerprint convers
@@ -277,16 +407,15 @@ main (int argc, char *argv[])
   /* Test all functions here. */
   //test_convergence ();
   //test_request_completed ();
-  //test_retrieve_post_response ();
+  //test_retrieve_response ();
   //test_send_response ();
-  printf("Testing request_certificate\n");
-  test_request_certificate ();
-  printf("Now testing verify_fingerprint_format\n");
-  test_verify_fingerprint_format();
+  //test_request_certificate ();
+  //test_verify_fingerprint_format();
   //test_is_in_cache ();
   //test_cache_remove ();
   //test_cache_insert ();
   //test_cache_update ();
+  test_verify_certificate();
 
   return 0;
 } // main
