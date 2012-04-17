@@ -38,7 +38,7 @@ retrieve_response (void *coninfo_cls, const char* url, const char *fingerprint_f
 
   //get the fingerprints
   num_of_certs = request_certificate(url, fingerprints_from_website);
-  
+
   if (num_of_certs == 0)
     {
       /* The notary could not obtain the certificate from the website

@@ -13,19 +13,20 @@
 #include "certificate.h"
 #include "response.h"
 
-/* A macro that defines an enhanced assert statement. */
-#define test(exp) \
-do { ++__tests; \
-if (! (exp)) { ++__fails; fprintf (stderr, "Test failed: %s at line: %d\n", \
-                                   #exp, __LINE__); }} \
-while (0)
-
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Globals
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #define MAX_NO_OF_CERTS 7
 int __tests = 0;
 int __fails = 0;
+
+/* A macro that defines an enhanced assert statement. */
+#define test(exp) \
+do { ++__tests; \
+if (! (exp)) { ++__fails; fprintf (stderr, "Test failed: %s at line: %d\n", \
+                                   #exp, __LINE__); }                   \
+ printf("Tests ran: %d,  Failed: %d\n", __tests, __fails);}             \
+while (0)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Helpers
@@ -85,6 +86,7 @@ test_retrieve_response ()
   char input_line[size];
   char *url;
   char *fingerprint;
+  int index_of_last_char;
 
   int result = 0;
 
@@ -117,6 +119,11 @@ test_retrieve_response ()
   /* If fingerprint_from_client matches the fingerprint from website, expect MHD_YES as the return value and answer code as MHD_HTTP_OK */
   while (fgets (input_line, size, valid_urls) != NULL)
     {
+      //First get rid of the newline character at the end of each line in the file
+      index_of_last_char = strlen(input_line) - 1;
+      if( input_line[index_of_last_char] == '\n')
+        input_line[index_of_last_char] = '\0';
+
       url = strtok(input_line, " ");
       fingerprint = strtok(NULL, " ");
 
@@ -124,13 +131,17 @@ test_retrieve_response ()
       result = retrieve_response (coninfo_cls, url, fingerprint);
     
       test(result == MHD_YES);
-      printf ("code: %d\n", coninfo_cls->answer_code);
       test(coninfo_cls->answer_code == MHD_HTTP_OK);
     }//while
 
   /* If URL is not valid, then expect MHD_NO. */
   while (fgets (input_line, size, invalid_urls) != NULL)
     {
+      //First get rid of the newline character at the end of each line in the file
+      index_of_last_char = strlen(input_line) - 1;
+      if( input_line[index_of_last_char] == '\n')
+        input_line[index_of_last_char] = '\0';
+
       url = strtok(input_line, " ");
       fingerprint = strtok(NULL, " ");
 
@@ -144,6 +155,11 @@ test_retrieve_response ()
   /* If fingerprint_from_client does not match any fingerprint from website, expect MHD_YES as the return value and answer_code as MHD_HTTP_CONFLICT. */
   while (fgets (input_line, size, invalid_fingerprints) != NULL)
     {
+      //First get rid of the newline character at the end of each line in the file
+      index_of_last_char = strlen(input_line) - 1;
+      if( input_line[index_of_last_char] == '\n')
+        input_line[index_of_last_char] = '\0';
+
       url = strtok(input_line, " ");
       fingerprint = strtok(NULL, " ");
 
