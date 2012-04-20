@@ -82,9 +82,9 @@ int main (int argc, char *argv[])
   char* ip;
   ip = set_default_notary_option("");
   char *certificate_file;
-  certificate_file = set_default_notary_option("/etc/ssl/certs/convergence.pem");
+  certificate_file = set_default_notary_option("./convergence.pem");
   char *key_file;
-  key_file = set_default_notary_option("/etc/ssl/private/convergence.key");
+  key_file = set_default_notary_option("./convergence.key");
   char *username;
   username = set_default_notary_option("nobody");
   char *group;
