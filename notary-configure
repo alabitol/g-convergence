@@ -1,17 +1,24 @@
 #!/bin/bash
-KEYFILE="./mykey.key"
-CERTFILE="./mycert.crt"
-if [ $# > 1 ]; then
-        $KEYFILE=$1 ;
+# Default locations for private key and self-signed certificate
+KEYFILE="./convergence.key"
+CERTFILE="./convergence.pem"
+
+# Check for user options
+if [ $# -ge 1 ]; then
+    KEYFILE=$1 
 fi
-if [ $# > 2 ]; then
-        $CERTFILE=$2 ;
+if [ $# -ge 2 ]; then
+    CERTFILE=$2 
 fi
 
+# Generate private key
 /usr/bin/openssl genrsa -out $KEYFILE 1024
 echo "
 
 "
+# Create certificate request file
 /usr/bin/openssl req -new -key $KEYFILE -out mycert.csr
+# Sign our certificate request to make a real certificate
 /usr/bin/openssl x509 -req -days 365 -in mycert.csr -signkey $KEYFILE -out $CERTFILE
+# Delete intermediate files
 rm mycert.csr
