@@ -138,7 +138,7 @@ static void get_fingerprint_from_cert (char** cert, char** fingerprints, int num
  * the fingerprints of the corresponding certificates in the output
  * parameter fingerprints. Returns the number of fingerprints retrieved.
  **/
-int request_certificate (const char *url, char** fingerprints)
+int request_certificate (host *host_to_verify, char** fingerprints)
 {  
   CURL *curl;
   CURLcode res;
@@ -151,8 +151,8 @@ int request_certificate (const char *url, char** fingerprints)
   
   //If curl has been initialized, set curl options.
   if(curl) {
-    curl_easy_setopt(curl, CURLOPT_URL, url);
- 
+    curl_easy_setopt(curl, CURLOPT_URL, host_to_verify->url);
+    curl_easy_setopt(curl, CURLOPT_PORT, host_to_verify->port);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, wrfu);
  
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);

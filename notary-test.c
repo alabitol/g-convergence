@@ -6,9 +6,9 @@
  * of the convergence system.
  ******************************************************************************/
 
-#include "notary.h"
 #include <malloc.h>
 #include <stdio.h>
+#include "notary.h"
 #include "connection.h"
 #include "certificate.h"
 #include "response.h"
@@ -21,18 +21,14 @@ int __tests = 0;
 int __fails = 0;
 
 /* A macro that defines an enhanced assert statement. */
-#define test(exp) \
-do { ++__tests; \
-if (! (exp)) { ++__fails; fprintf (stderr, "Test failed: %s at line: %d\n", \
-                                   #exp, __LINE__); }                   \
- printf("Tests ran: %d,  Failed: %d\n", __tests, __fails);}             \
-while (0)
+#define test(exp) do { ++__tests; if (! (exp)) { ++__fails; fprintf (stderr, "Test failed: %s at line: %d\n", #exp, __LINE__); } } while (0)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Helpers
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-/* Get information about the amount of dynamically allocated address space
+/**
+ * Get information about the amount of dynamically allocated address space
  * in bytes.
  */
 static int
@@ -42,12 +38,41 @@ mem_allocated ()
   return info.uordblks;
 } // mem_allocated
 
+
+/**
+ * Write Function: tell the curl functions where to write the data they
+ * receive from a network
+ *
+ * @param ptr a pointer to the location where the data will be stored
+ * @param size,
+ * @param nmemb, the size of the data written
+ * @param stream
+ * @return 
+ */
+static size_t write_function (void *ptr,  size_t  size,  size_t  nmemb,  void *stream)
+{
+  (void) stream;
+  (void) ptr;
+  return size * nmemb;
+}
+
+/**
+ * Combines curl cleanup calls. 
+ */
+static void curl_cleanup(CURL* curl_handle)
+{
+  curl_easy_cleanup(curl_handle);
+  curl_global_cleanup();
+}
+
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Unit tests for functions implemted in connection.c, certificate.c,
 // response.c, and cache.c.
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-/* Test the entire system. */
+/** 
+ * Test the entire system. 
+ */
 void
 test_convergence ()
 {
@@ -89,6 +114,10 @@ test_retrieve_response ()
   int index_of_last_char;
 
   int result = 0;
+  host *host_to_verify = malloc (sizeof(host));
+
+  //Set the port
+  host_to_verify->port = 443;
 
   valid_urls = fopen("valid_urls.txt", "r");  
   if (valid_urls == NULL)
@@ -127,8 +156,10 @@ test_retrieve_response ()
       url = strtok(input_line, " ");
       fingerprint = strtok(NULL, " ");
 
+      host_to_verify->url = url;
+      
       /* Call retrieve_response and check its return value. */
-      result = retrieve_response (coninfo_cls, url, fingerprint);
+      result = retrieve_response (coninfo_cls, host_to_verify, fingerprint);
     
       test(result == MHD_YES);
       test(coninfo_cls->answer_code == MHD_HTTP_OK);
@@ -144,9 +175,11 @@ test_retrieve_response ()
 
       url = strtok(input_line, " ");
       fingerprint = strtok(NULL, " ");
-
+      
+      host_to_verify->url = url;
+ 
       /* Call retrieve_response and check its return value. */
-      result = retrieve_response(coninfo_cls, url, fingerprint);
+      result = retrieve_response(coninfo_cls, host_to_verify, fingerprint);
 
       /* Check if result is MHD_NO */
       test(result == MHD_NO);
@@ -162,9 +195,11 @@ test_retrieve_response ()
 
       url = strtok(input_line, " ");
       fingerprint = strtok(NULL, " ");
-
+      
+      host_to_verify->url = url;
+ 
       /* Call retrieve_response and check its return value. */
-      result = retrieve_response(coninfo_cls, url, fingerprint);
+      result = retrieve_response(coninfo_cls, host_to_verify, fingerprint);
 
       test(result == MHD_YES);
       test(coninfo_cls->answer_code == MHD_HTTP_CONFLICT);
@@ -226,9 +261,183 @@ test_verify_certificate ()
  
 } // test_verify_certificate
 
+
+int
+test_send_response_helper (void *cls, struct MHD_Connection *connection,
+    const char *url, const char *method,
+    const char *version, const char *upload_data,
+    size_t *upload_data_size, void **con_cls) 
+{
+  int ret_val;
+  char request_num;
+    
+  /* The first time through only headers are processed. Only the second time
+   * this function is called can we access upload_data.
+   */
+  if (*con_cls == NULL)
+    {
+      struct connection_info_struct *con_info;
+      con_info = malloc (sizeof (struct connection_info_struct));
+
+      /* Process POST and GET request separately. Signal an error
+       * on any other method.
+       */
+      if  (strcmp (method, "POST") == 0)
+        con_info->connection_type = POST;
+      else if (strcmp (method, "GET") == 0)
+        con_info->connection_type = GET;
+
+      *con_cls = (void *) con_info;
+      return MHD_YES;
+    } // if
+  
+  /* This gets executed the second time the function is called. Only now can
+   * we access upload_data.
+   */
+  struct connection_info_struct *con_info = *con_cls;
+  
+  /* Response strings for the server to return. */
+  const char *busy_page = 
+    "The server is too busy to handle the verification request.\n";
+
+  const char *unsupported_method_page = 
+  "The server received a request with unsupported method.\n";
+
+  const char *json_fingerprint_list = 
+    "{\n \
+    \t\"fingerprintList\":\n \
+\t[\n \
+\t {\n \
+\t \"timestamp\": {\"start\": \"1292636531\", \"finish\": \"1292754629\"},\n \
+\t \"fingerprint\": \"BF:E1:FE:03:10:E9:CB:DC:96:BF:3D:AA:6E:C6:03:E5:31:CD:A9:9C\"\n \
+\t }\n \
+\t],\n \
+\t\"signature\": \"MHu+jKdTJhRiNqTZleFnTYhKF/l0F4Nch8il/mG4GNoQ911VgLSAv1WICfoZ8E9+GFeNWZJMX6B7dMOVeG/mYbPdm7jH4XvJoIPFT+OoihcS0XjonUXEhYslVbmVviAiIkhESVcuuE1QZwXYHaDY21WBo4UMHBu6bVotx6Y3vgyBeA++5+yKXqVe7Tc+d/1GRcPqMCgYTpFxOTzlRSqceHUNiGx1X1HjUAGb7DqayR75cGtcIjZ9ONc0UBwJq8SYzF/j0DqB7HX4AdRyFyT8qN8ONFh9Vp04plwhuiXTmwiIM3dmDt+lD16D1RDYcPWuWBawQcReP3N82y54ZcEl3g==\"\n \
+}\n";
+
+  /* Upload size needs to be set to 0 before calling send response. */
+  if(*upload_data_size != 0)
+    {
+      *upload_data_size = 0;
+      return MHD_YES;
+    }
+  else
+    {
+      /* This is the third time this function is called. */
+
+      /* Get the test number which determines the appropriate response. */
+      request_num = url[25];
+      switch (atoi(&request_num))
+        {
+          // Potential scenarios
+        case 0:
+          /* The server is too busy to respond. */
+          ret_val = send_response(connection, busy_page, MHD_HTTP_SERVICE_UNAVAILABLE);
+          test (ret_val == MHD_YES);
+          break;
+        case 1:
+          /* The request from the client was not POST or GET. */
+          ret_val = 
+            send_response(connection, unsupported_method_page, MHD_HTTP_BAD_REQUEST);
+          test (ret_val == MHD_YES);
+          break;  
+        case 2:
+          /* Request suceeded and fingerprint was not verified: answer_code 409. */
+          ret_val =
+            send_response(connection, json_fingerprint_list, MHD_HTTP_CONFLICT);
+          test (ret_val == MHD_YES);
+          break;
+        case 3:
+          /* Request succeeded and fingerprint was verified: answer_code 200. */
+          ret_val =
+            send_response(connection, json_fingerprint_list, MHD_HTTP_OK);
+          test (ret_val == MHD_YES);
+          break;
+        }
+    }
+  return MHD_YES;
+} // test_send_response_helper
+
 void 
 test_send_response ()
 {
+  long int ssl_port = 7000;
+  int i, num_tests = 4;
+  struct MHD_Daemon *ssl_daemon;
+  
+  /* To test send_response, we need MHD_Connection, which is one of its
+   * arguments. To obtain MHD_Connection, we start the MHD_Daemon, make a
+   * request to it using curl, instruct the deamon to call a
+   * test_send_response_helper function, which will perform the actual
+   * testing.
+   */
+  ssl_daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION, 
+                                 ssl_port, 
+                                 NULL, 
+                                 NULL, 
+                                 &test_send_response_helper,
+                                 NULL, // we do not need to call request_completed
+                                 MHD_OPTION_END
+                             );
+
+  if (ssl_daemon == NULL)
+    {
+      fprintf (stderr, "Error: Failed to start the MHD SSL daemon.\n");
+    }
+  else // for debugging
+  {
+    fprintf(stderr, "The daemon is up and running!\n");
+  }
+  
+  /* Send requests to the daemon with curl. */
+  CURL *curl;
+  CURLcode res;
+  char buffer[1024];
+
+  /* Send multiple requests. */
+  for (i = 0; i < num_tests; i++)
+    {
+      /* Initialize curl. */
+      curl_global_init(CURL_GLOBAL_ALL);
+      curl = curl_easy_init();
+
+      /* Set curl options. */
+      if (curl)
+        {
+          char* finger =
+            "fingerprint=03:47:7F:F5:F6:3B:F5:B6:10:C0:7D:65:9A:7B:A9:12:D3:20:83:68";
+    
+          /* We want to send a test request to the daemon. */
+          char *host = malloc(47 * sizeof(char));
+          sprintf(host, "http://localhost/target/www.wikipedia.org%d+443", i);
+          curl_easy_setopt(curl, CURLOPT_URL, host);
+          curl_easy_setopt(curl, CURLOPT_PORT, ssl_port);
+          curl_easy_setopt(curl, CURLOPT_POSTFIELDS, finger);
+          
+          /* Make the curl request. */
+          res = curl_easy_perform(curl);
+          if (!res)
+            {
+              /* Verify if the response was received by the client. */
+             
+              curl_cleanup(curl);
+            }
+          else
+            {
+              /* Curl did not succeed in sending the request. */
+              fprintf(stderr, "Could not send request to server\n");
+              curl_cleanup(curl);
+            } // if (!res)
+        }
+      else
+        {
+          fprintf(stderr, "Could not initialize CURL\n");
+          curl_cleanup(curl);
+        } // if (curl)
+    } // for
+  
+  MHD_stop_daemon(ssl_daemon);
+  
 } // test_send_response
 
 void 
@@ -241,10 +450,11 @@ test_request_certificate ()
   char* correct_fingerprint;
   char* retrieved_fingerprints[MAX_NO_OF_CERTS];
   int index_of_last_char, number_of_certs;
+  host *host_to_verify = malloc (sizeof(host));
 
   valids = fopen ("valid_urls.txt", "r");
   if (valids == NULL)
-    {
+  {
       fprintf (stderr, "Could not open valid_urls.txt\n");
       exit(1);
     }
@@ -269,13 +479,16 @@ test_request_certificate ()
       if( string_read[index_of_last_char] == '\n')
         string_read[index_of_last_char] = '\0';
 
-      //get the url from the string gotten from the file
+      //get the url from the string gotten from the file and construct host
       url = strtok(string_read, "' '");
+      host_to_verify->url = url;
+      host_to_verify->port = 443;
       //then get the fingerprint
       correct_fingerprint = strtok(NULL, "' '");
 
       //Get the fingerprint by calling request_certificate
-      number_of_certs = request_certificate(url, retrieved_fingerprints);
+      number_of_certs = request_certificate(host_to_verify, retrieved_fingerprints);
+      printf("%d certs found\n", number_of_certs);
 
       test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) == 0);
 
@@ -296,12 +509,13 @@ test_request_certificate ()
 
       //get the url from the string gotten from the file
       url = strtok(string_read, "' '");
-
+      host_to_verify->url = url;
+      host_to_verify->port = 443;
       //then get the fingerprint
       correct_fingerprint = strtok(NULL, "' '");
 
       //Get the fingerprint by calling request_certificate
-      number_of_certs = request_certificate(url, retrieved_fingerprints);
+      number_of_certs = request_certificate(host_to_verify, retrieved_fingerprints);
 
       //Check if the fingerprints are the same
       test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) != 0);
@@ -315,6 +529,7 @@ test_request_certificate ()
 
   fclose (valids);
   fclose (invalids);
+  free(host_to_verify);
 
   //free memory used for fingerprints
   for(i=0; i<MAX_NO_OF_CERTS; i++)
@@ -423,8 +638,10 @@ main (int argc, char *argv[])
   /* Test all functions here. */
   //test_convergence ();
   //test_request_completed ();
-  test_retrieve_response ();
+  //test_retrieve_response ();
   //test_send_response ();
+  //test_retrieve_post_response ();
+  test_send_response ();
   //test_request_certificate ();
   //test_verify_fingerprint_format();
   //test_is_in_cache ();

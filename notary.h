@@ -1,7 +1,7 @@
 /******************************************************************************
  * Authors: g-coders
  * Created: March 11, 2012
- * Revised: April 15, 2012
+ * Revised: April 20, 2012
  * Description: This is a header file which will be included in all other
  * header files of the project
  ******************************************************************************/
@@ -54,6 +54,14 @@ struct connection_info_struct
   const char *answer_string;
   int answer_code;
 };
+
+/* This datastructure contains the url and port of the host we need to
+   verify. */
+typedef struct
+{
+  char *url;
+  long port;
+} host;
 
 /* Length of certificate fingerprints we are dealing with. */
 #define FPT_LENGTH 60
