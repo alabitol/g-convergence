@@ -1,6 +1,6 @@
 Authors:     g-coders 
 Created:     February 21, 2012 
-Revised:     March 12, 2012
+Revised:     April 28, 2012
 Description: Where we are in our project.
 *******************************************************************************
 
@@ -8,9 +8,11 @@ Next steps:
 
 notary.c:
 
-* Can the daemon handle ssl connections? If so, how? Make sure this
-functionality is verified.
-* We need the daemon to listen on ssl_port and 4242. Can we start two daemons?
+* Write unit tests for and answer_to_connection()
+* Determine what C mysql functions we need to use for our cache functions
+* Write unit test for functions in cache.c
+* Write integration tests for the notary system
+* Convert the project to Doxygen documentation format
 
 The plan:
 
