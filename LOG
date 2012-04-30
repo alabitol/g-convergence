@@ -70,4 +70,27 @@ responsibility of microhttpd library.
 Week 5:
 
 We need to convert the formatting of our documentation to Doxygen compatible
-formatting.
+formatting. Matt will be responsible for making these changes.
+
+Week 6:
+
+We have implmented more unit tests.
+
+Week 7:
+
+We have begun to implement cache and test_send_response.
+
+Week 8:
+
+Radhika and Chase have been working hard on implementing the cache. We cache
+functions are now implemented- we only need to verify that they are working
+with the appropriate C mysql library. 
+
+Zach has finished writing a script that configures the notary. This script creates
+notary's private key and certificate if they does not exist. Afterwards, it
+signs the certificate with the notary's private key which concludes the
+configuration process.
+
+Tolu and Martin have finished implementing test_send_response, which now
+verifies that send response functions appropriately in 4 different client
+requests.

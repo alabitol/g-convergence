@@ -15,7 +15,16 @@
 //WE ARE NOT SURE ABOUT THIS
 #define RESPONSE_LEN 201
 #define MAX_NO_OF_CERTS 7
-const char* page = "Your request was successful!";
+
+/* Allocate and fill the answer string field in connection struct. */
+void
+set_answer_string(void* coninfo_cls, char* answer_string)
+{
+  struct connection_info_struct *con_info = coninfo_cls;
+  
+  con_info->answer_string = malloc(sizeof(char) * strlen(answer_string + 1));
+  strcpy((char*)con_info->answer_string, answer_string);
+}
 
 /* Figure out RESPONSE_LEN and define it here. */
 /* SEEMS TO BE ABOUT 201 CHARACTERS LONG */
@@ -23,7 +32,7 @@ const char* page = "Your request was successful!";
 /* Obtains a response to a POST/GET request.
  */
 int
-retrieve_response (void *coninfo_cls, const char* url, const char *fingerprint_from_client)
+retrieve_response (void *coninfo_cls, host *host_to_verify, const char *fingerprint_from_client)
 {
   int verified, num_of_certs; // was certificate verified?
   char *fingerprints_from_website[MAX_NO_OF_CERTS];
@@ -37,8 +46,8 @@ retrieve_response (void *coninfo_cls, const char* url, const char *fingerprint_f
     fingerprints_from_website[i] = calloc(sizeof(char) * FPT_LENGTH, 1);
 
   //get the fingerprints
-  num_of_certs = request_certificate(url, fingerprints_from_website);
-
+  num_of_certs = request_certificate(host_to_verify, fingerprints_from_website);
+  
   if (num_of_certs == 0)
     {
       /* The notary could not obtain the certificate from the website
@@ -75,11 +84,12 @@ retrieve_response (void *coninfo_cls, const char* url, const char *fingerprint_f
 \t \"fingerprint\": \"%s\"\n \
 \t }\n \
 \t],\n \
-\t\"signature\": \"%s\"\n \
+\t\"signature\": \"%s\"\n                       \
 }\n");
 
-  con_info->answer_string = json_fingerprint_list;
-
+  //con_info->answer_string = json_fingerprint_list;
+  set_answer_string(coninfo_cls, json_fingerprint_list);
+  
   //free memory used for fingerprints
   for(i=0; i<MAX_NO_OF_CERTS; i++)
     free(fingerprints_from_website[i]);
@@ -98,10 +108,12 @@ send_response (struct MHD_Connection *connection, const char *response_data,
   int return_value;
   struct MHD_Response *response;
 
-  response = MHD_create_response_from_data (strlen(page), (void*)page,
+  response = MHD_create_response_from_data (strlen(response_data), (void*) response_data,
                                             MHD_NO, MHD_NO);
-  if(response == NULL)
+  if (response == NULL)
+  {
     return MHD_NO;
+  }
 
   return_value = MHD_queue_response (connection, status_code, response);
   MHD_destroy_response (response);

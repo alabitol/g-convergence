@@ -15,7 +15,7 @@
    requested certificate
 */
 int 
-request_certificate (const char *url, char** fingerprints);
+request_certificate (host *host_to_verify, char** fingerprints);
 
 
 /* Verifies that the received certificate from the website matches with the

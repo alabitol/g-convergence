@@ -15,10 +15,35 @@
 /* Keep track of the number of clients with active requests. */
 unsigned int number_active_clients = 0;
 
+/* Response strings for the server to return. */
 const char *busy_page = 
   "The server is too busy to handle the verification request.";
+
 const char *unsupported_method_page = 
   "The server received a request with unsupported method.";
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Helpers
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+/* Extract the host which we need to verify from the requested url. */
+static host *
+extract_host (char *url, host *host_to_verify)
+{
+  char *target;
+
+  /* Extract the host and port from the url. */
+  strtok(target, "/");
+  host_to_verify->url = strtok(NULL, " ");
+  host_to_verify->port = atol(strtok(NULL, ""));
+
+  return host_to_verify;
+} // extract_host
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Functions
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 /* Handles the connection of a client. The address of this function needs to
  * be passed to MHD_start_daemon.
@@ -30,8 +55,14 @@ answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
     const char *version, const char *upload_data,
     size_t *upload_data_size, void **con_cls)
 {
+  host *host_to_verify = malloc(sizeof(host)); // website the user wants to verify
+
+  /* Url to be parsed cannot be a constant string. */
+  char *requested_url = malloc(sizeof(char) * strlen(url));
+  strcpy(requested_url,url);
+
   /* The first time the function is called, only headers are processed. */
-  if (con_cls == NULL)
+  if (*con_cls == NULL)
   {    
     struct connection_info_struct *con_info;
 
@@ -41,7 +72,6 @@ answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
 
     con_info = malloc (sizeof (struct connection_info_struct));
 
-    /* Do we want to return send_response or MHD_NO? */
     if (con_info == NULL)
       return MHD_NO;
 
@@ -66,9 +96,12 @@ answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
     /* Keep processing the upload data until there is no data to process. */
     if (0 != *upload_data_size)
     {
-      retrieve_response(con_info, url, upload_data);
+      extract_host(requested_url, host_to_verify);
+      retrieve_response(con_info, host_to_verify, upload_data);
       *upload_data_size = 0;
 
+      free(host_to_verify);
+      free(requested_url);
       /* Can we send the response right away instead of return MHD_YES? */
       return MHD_YES;
     }
@@ -83,9 +116,13 @@ answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
   {
     struct connection_info_struct *con_info = *con_cls;
 
+    extract_host(requested_url, host_to_verify);
     /* If the fingerprint is not included in the request, call the method retrieve_response 
        without a fingerprint from the client */
-    retrieve_response(con_info, url, NULL);
+    retrieve_response(con_info, host_to_verify, NULL);
+
+    free(host_to_verify);
+    free(requested_url);
     
     /* We probably want to call get_response here as well. Hmmm... */
     return send_response (connection, con_info->answer_string, con_info->answer_code);
