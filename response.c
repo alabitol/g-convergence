@@ -53,13 +53,13 @@ retrieve_response (void *coninfo_cls, host *host_to_verify, const char *fingerpr
   if (num_of_certs == 0)
     {
       /* The notary could not obtain the certificate from the website
-       * for some reason
+       * for some reason.
        */
       con_info->answer_code = MHD_HTTP_SERVICE_UNAVAILABLE; //503
       return MHD_NO;
-    }
+    } // if
 
-  if(fingerprint_from_client != NULL)
+  if (fingerprint_from_client != NULL)
     {
       verified =
         verify_certificate (fingerprint_from_client, fingerprints_from_website, num_of_certs);

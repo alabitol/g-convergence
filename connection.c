@@ -158,6 +158,11 @@ int answer_to_4242_connection(void *cls, struct MHD_Connection *connection,
     size_t *upload_data_size, void **con_cls)
 { return 0; }
 
+/**
+ * This function is called by MHD_start_daemon when a request completes to
+ * insure that memory for datastructures we create to store information 
+ * about the connection are properly freed at the end.
+ */
 void
 request_completed (void *cls, struct MHD_Connection *connection,
     void **con_cls, enum MHD_RequestTerminationCode toe)
@@ -179,5 +184,5 @@ request_completed (void *cls, struct MHD_Connection *connection,
   free (*con_cls);
   *con_cls = NULL;
   con_info = NULL;
-}
+} // request_completed
 

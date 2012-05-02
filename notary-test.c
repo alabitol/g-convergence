@@ -21,6 +21,11 @@
 int __tests = 0;
 int __fails = 0;
 
+/* Identify different connection types. */
+#define GET 0
+#define POST 1
+#define CUSTOM 2
+
 /* A macro that defines an enhanced assert statement. */
 #define test(exp) do { ++__tests; if (! (exp)) { ++__fails; fprintf (stderr, "Test failed: %s at line: %d\n", #exp, __LINE__); } } while (0)
 
@@ -136,6 +141,58 @@ static CURL* create_custom_request(char* url)
   return curl_handle;
 }
 
+/* Function that sends HTTP requests to a running MHD_Daemon. */
+void
+send_curl_requests()
+{
+  int connection_type[NUM_OF_CONNECTIONS] = {GET, POST, CUSTOM, POST, GET, CUSTOM, POST, POST, GET, GET};
+
+  /* Send requests to the daemon with curl. */
+  CURL* curl;
+  CURLcode res;
+  int i;
+
+  for(i=0; i<NUM_OF_CONNECTIONS; i++)
+    {
+      if(connection_type[i] == POST)
+        curl = create_post_request("http://localhost/target/https://www.wikipedia.org+443",
+                                   "03:47:7F:F5:F6:3B:F5:B6:10:C0:7D:65:9A:7B:A9:12:D3:20:83:68");
+      else
+        {
+          if(connection_type[i] == GET)
+            {
+              curl = create_get_request("http://localhost/target/https://www.wikipedia.org+443");
+            }
+          else
+            curl = create_custom_request("http://localhost/target/https://www.wikipedia.org+443");
+        }
+      
+      /* Set curl options. */
+      if (curl)
+        {
+          /* Make the curl request. */
+          res = curl_easy_perform(curl);
+          
+          if (!res)
+            {
+              /* Verify if the response was received by the client. */
+              curl_cleanup(curl);
+            }
+          else
+            {
+              /* Curl did not succeed in sending the request. */
+              fprintf(stderr, "here Could not send request to server\n");
+              curl_cleanup(curl);
+            } // if (!res)
+        }
+      else
+        {
+          fprintf(stderr, "Could not initialize CURL\n");
+          curl_cleanup(curl);
+        } // if (curl)
+    }//for
+} // send_curl_requests
+
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Unit tests for functions implemted in connection.c, certificate.c,
 // response.c, and cache.c.
@@ -233,7 +290,6 @@ test_answer_to_connection ()
 {
   int ssl_port = 7000;
   struct MHD_Daemon *ssl_daemon;
-  int connection_type[NUM_OF_CONNECTIONS] = {1, 0, 2, 0, 1, 2, 0, 0, 1, 1};
 
   /* To test answer_to_connection, we need MHD_Connection, which is one of its
    * arguments. To obtain MHD_Connection, we start the MHD_Daemon, make a
@@ -258,51 +314,8 @@ test_answer_to_connection ()
       printf("The daemon is up and running!\n");
     }
   
-  /* Send requests to the daemon with curl. */
-  CURL* curl;
-  CURLcode res;
+  send_curl_requests();
 
-  int i;
-  for(i=0; i<NUM_OF_CONNECTIONS; i++)
-    {
-      if(connection_type[i] == 0)
-        curl = create_post_request("http://localhost/target/https://www.wikipedia.org+443",
-                                   "03:47:7F:F5:F6:3B:F5:B6:10:C0:7D:65:9A:7B:A9:12:D3:20:83:68");
-      else
-        {
-          if(connection_type[i] == 1)
-            {
-              curl = create_get_request("http://localhost/target/https://www.wikipedia.org+443");
-            }
-          else
-            curl = create_custom_request("http://localhost/target/https://www.wikipedia.org+443");
-        }
-      
-      /* Set curl options. */
-      if (curl)
-        {      
-          /* Make the curl request. */
-          res = curl_easy_perform(curl);
-          
-          if (!res)
-            {
-              /* Verify if the response was received by the client. */   
-              curl_cleanup(curl);
-            }
-          else
-            {
-              /* Curl did not succeed in sending the request. */
-              fprintf(stderr, "here Could not send request to server\n");
-              curl_cleanup(curl);
-            } // if (!res)
-        }
-      else
-        {
-          fprintf(stderr, "Could not initialize CURL\n");
-          curl_cleanup(curl);
-        } // if (curl)
-    }//for
-  
   MHD_stop_daemon(ssl_daemon);
 } // test_answer_to_connection
 
@@ -384,7 +397,6 @@ test_request_completed ()
 
   int ssl_port = 7000;
   struct MHD_Daemon *ssl_daemon;
-  int connection_type[NUM_OF_CONNECTIONS] = {0, 1, 2, 0, 0, 1, 2, 2, 0, 1};
 
   /* To test answer_to_connection, we need MHD_Connection, which is one of its
    * arguments. To obtain MHD_Connection, we start the MHD_Daemon, make a
@@ -409,51 +421,8 @@ test_request_completed ()
       printf("The daemon is up and running!\n");
     }
   
-  /* Send requests to the daemon with curl. */
-  CURL* curl;
-  CURLcode res;
-  int i;
+  send_curl_requests();
 
-  for(i=0; i<NUM_OF_CONNECTIONS; i++)
-    {
-      if(connection_type[i] == 0)
-        curl = create_post_request("http://localhost/target/https://www.wikipedia.org+443",
-                                   "03:47:7F:F5:F6:3B:F5:B6:10:C0:7D:65:9A:7B:A9:12:D3:20:83:68");
-      else
-        {
-          if(connection_type[i] == 1)
-            {
-              curl = create_get_request("http://localhost/target/https://www.wikipedia.org+443");
-            }
-          else
-            curl = create_custom_request("http://localhost/target/https://www.wikipedia.org+443");
-        }
-      
-      /* Set curl options. */
-      if (curl)
-        {
-          /* Make the curl request. */
-          res = curl_easy_perform(curl);
-          
-          if (!res)
-            {
-              /* Verify if the response was received by the client. */
-              curl_cleanup(curl);
-            }
-          else
-            {
-              /* Curl did not succeed in sending the request. */
-              fprintf(stderr, "here Could not send request to server\n");
-              curl_cleanup(curl);
-            } // if (!res)
-        }
-      else
-        {
-          fprintf(stderr, "Could not initialize CURL\n");
-          curl_cleanup(curl);
-        } // if (curl)
-    }//for
-  
   MHD_stop_daemon(ssl_daemon);
 
 } // test_request_completed
@@ -852,8 +821,7 @@ test_request_certificate ()
       //reset all the characters in each string to null to allow for the
       //next iteration of fingerprint conversion
       for(i=0; i<MAX_NO_OF_CERTS; i++)
-        for(j=0; j<FPT_LENGTH; j++)
-          retrieved_fingerprints[i][j] = '\0';
+	retrieved_fingerprints[i][0] = '\0';
     }
 
   /* Read invalid urls from a file and request a certificate from each. */
@@ -874,14 +842,13 @@ test_request_certificate ()
       //Get the fingerprint by calling request_certificate
       number_of_certs = request_certificate(host_to_verify, retrieved_fingerprints);
 
-      //Check if the fingerprints are the same
+      //Check that fingerprints do not match
       test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) == 0);
 
       //reset all the characters in each string to null to allow for the
       //next iteration of fingerprint convers
       for(i=0; i<MAX_NO_OF_CERTS; i++)
-        for(j=0; j<FPT_LENGTH; j++)
-          retrieved_fingerprints[i][j] = '\0';
+	retrieved_fingerprints[i][0] = '\0';
     }
 
   fclose (valids);
@@ -992,10 +959,19 @@ test_cache_update ()
 int
 main (int argc, char *argv[])
 {
+  /* Variables to keep track of allocated memory. */
+  int before, after;
+
   /* Test all functions here. */
   //test_convergence ();
   //test_answer_to_connection();
+
+  /* Check if the system is leaking memory. */
+  before = mem_allocated();
   test_request_completed ();
+  after = mem_allocated();
+  printf ("BEFORE: %d\nAFTER: %d", before, after);
+  test(before==after);
   //test_retrieve_response ();
   //test_send_response ();
   //test_retrieve_post_response ();
