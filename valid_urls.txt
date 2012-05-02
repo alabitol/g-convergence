@@ -1,5 +1,5 @@
 https://www.facebook.com BF:E1:FE:03:10:E9:CB:DC:96:BF:3D:AA:6E:C6:03:E5:31:CD:A9:9C
-https://encrypted.google.com E2:9E:46:29:A0:FD:3C:57:A0:68:30:C5:0A:45:97:63:BF:8D:75:FC
+https://encrypted.google.com 8F:05:FC:C2:E3:C9:2E:C6:88:8C:F7:62:F4:64:92:35:57:45:39:14
 https://twitter.com EA:9D:EF:D6:33:61:D9:76:71:E1:6C:68:9F:54:A6:59:D7:F1:0E:66
 https://www.linkedin.com 68:C8:18:57:3D:39:55:B6:60:34:14:54:70:32:CB:41:A0:9D:0B:06
 https://mail.grinnell.edu/owa 45:24:40:53:4F:B4:7C:A6:C6:09:F4:B3:FA:DE:6A:DD:21:56:35:ED
@@ -27,4 +27,4 @@ https://squareup.com/ 2E:EF:83:34:B3:1D:17:BB:F6:4F:95:31:CB:E8:13:2F:53:D0:10:0
 https://www.suntrust.com/ F6:45:35:1A:B2:DA:C1:A9:C6:DE:CE:99:58:38:14:5E:94:EF:F4:C1
 https://foursquare.com/ 98:E8:91:88:D0:3E:AC:E7:71:DD:95:FC:E8:A7:0E:9D:B9:98:94:2B
 https://joindiaspora.com/ FF:ED:8E:1B:34:0F:21:30:A7:6B:51:95:0A:83:02:7F:8C:C2:C0:9B
-https://www.chase.com/ D1:87:35:15:1E:DB:67:2E:5B:E3:9F:82:20:85:40:E2:0A:CA:F3:8C
+https://heplb06.hrbpo.hewitt.com/portal/hrww/signin/02491/login.jsp A2:FB:AD:30:86:26:7F:1E:22:80:D2:4A:EB:EE:9C:06:1C:1E:93:43

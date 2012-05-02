@@ -18,12 +18,10 @@
 
 /* Allocate and fill the answer string field in connection struct. */
 void
-set_answer_string(void* coninfo_cls, char* answer_string)
-{
-  struct connection_info_struct *con_info = coninfo_cls;
-  
-  con_info->answer_string = malloc(sizeof(char) * strlen(answer_string + 1));
-  strcpy((char*)con_info->answer_string, answer_string);
+set_answer_string(struct connection_info_struct* connection_info, char* answer_string)
+{  
+  connection_info->answer_string = malloc(sizeof(char) * strlen(answer_string + 1));
+  strcpy((char*)connection_info->answer_string, answer_string);
 }
 
 /* Figure out RESPONSE_LEN and define it here. */
@@ -40,12 +38,16 @@ retrieve_response (void *coninfo_cls, host *host_to_verify, const char *fingerpr
 
   struct connection_info_struct *con_info = coninfo_cls;
 
+  //variables to store the time stamp
+  size_t start_time, end_time;
+
   //create space for the fingerprints
   int i;
   for(i=0; i<MAX_NO_OF_CERTS; i++)
     fingerprints_from_website[i] = calloc(sizeof(char) * FPT_LENGTH, 1);
 
   //get the fingerprints
+  start_time = time(NULL);
   num_of_certs = request_certificate(host_to_verify, fingerprints_from_website);
   
   if (num_of_certs == 0)
@@ -65,8 +67,11 @@ retrieve_response (void *coninfo_cls, host *host_to_verify, const char *fingerpr
       if (verified == 1)
         con_info->answer_code = MHD_HTTP_OK; // 200
       else
-        con_info->answer_code = MHD_HTTP_CONFLICT; // 409
+        {
+          con_info->answer_code = MHD_HTTP_CONFLICT; // 409
+        }
     }
+  else con_info->answer_code = MHD_HTTP_OK;
 
   /* Format the response which will be sent to client.
    * Note that this response is sent both on a successful verification
@@ -74,22 +79,25 @@ retrieve_response (void *coninfo_cls, host *host_to_verify, const char *fingerpr
    * The JSON format of the response is available at
    * https://github.com/moxie0/Convergence/wiki/Notary-Protocol
    */
-  json_fingerprint_list = malloc (RESPONSE_LEN * sizeof (char));
-  strcpy (json_fingerprint_list,
+  //get end_time for processing the request
+  end_time = time(NULL);
+
+  json_fingerprint_list = malloc ( (RESPONSE_LEN + 1) * sizeof (char));
+  sprintf (json_fingerprint_list,
            "{\n \
 \t\"fingerprintList\":\n \
 \t[\n \
 \t {\n \
-\t \"timestamp\": {\"start\": \"%s\", \"finish\": \"%s\"},\n \
+\t \"timestamp\": {\"start\": \"%Zu\", \"finish\": \"%Zu\"},\n \
 \t \"fingerprint\": \"%s\"\n \
 \t }\n \
-\t],\n \
-\t\"signature\": \"%s\"\n                       \
-}\n");
+\t]\n\
+}\n", start_time, end_time, fingerprints_from_website[0]);
 
-  //con_info->answer_string = json_fingerprint_list;
-  set_answer_string(coninfo_cls, json_fingerprint_list);
+  set_answer_string(con_info, json_fingerprint_list);
   
+  free(json_fingerprint_list);
+
   //free memory used for fingerprints
   for(i=0; i<MAX_NO_OF_CERTS; i++)
     free(fingerprints_from_website[i]);
