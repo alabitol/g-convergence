@@ -1,7 +1,15 @@
 #!/bin/bash
 # Default locations for private key and self-signed certificate
+
 KEYFILE="./convergence.key"
 CERTFILE="./convergence.pem"
+
+# Check if openssl is installed, and figure out the absolute path of openssl
+OPENSSL=$(command -v openssl)
+if [ -z "$OPENSSL" ]; then
+    echo "Openssl is not installed. Please install openssl before running the notary."
+    exit
+fi
 
 # Prompt user for private key name
 echo "Insert desired private key name (defaults to ./convergence.key): "
@@ -14,13 +22,13 @@ fi
 if [ -e $KEYFILE ]; then
     echo "Warning: About to delete $KEYFILE. Do you wish to overwrite?"
     read -n 1 PREF
-    if [ $PREF != "y" ]; then
+    if [ $PREF != "y" ] || [ -z $PREF ]; then
        exit
     fi
 fi
 
 # Generate private key
-/usr/bin/openssl genrsa -out $KEYFILE 1024
+$OPENSSL genrsa -out $KEYFILE 2048
 echo "
 
 "
@@ -35,9 +43,10 @@ fi
 if [ -e $CERTFILE ]; then
     echo "Warning: About to delete $CERTFILE. Do you wish to overwrite?"
     read -n 1 PREF
-    if [ $PREF != "y" ]; then
-        rm ./mycert.csr
-        exit
+    if ( $PREF != "y" ) ; then
+        if [ -z $PREF ] ; then
+            exit
+        fi
     fi
 fi
 
@@ -45,15 +54,18 @@ fi
 if [ -e "./mycert.csr" ]; then
     echo "Warning: About to delete intermediate file mycert.csr. Do you wish to overwrite?"
     read -n 1 PREF
-    if [ $PREF != "y" ]; then
+    if [ $PREF != "y" || -z $PREF ]; then
        exit
     fi
 fi
 
 # Create certificate request file
-/usr/bin/openssl req -new -key $KEYFILE -out ./mycert.csr
+$OPENSSL req -new -key $KEYFILE -out ./mycert.csr
 
 # Sign our certificate request to make a real certificate
-/usr/bin/openssl x509 -req -days 365 -in mycert.csr -signkey $KEYFILE -out $CERTFILE
+$OPENSSL x509 -req -days 365 -in mycert.csr -signkey $KEYFILE -out $CERTFILE
+
+# Confirm successful key/certificate generation
+echo "Successful generation of key in $KEYFILE and certificate in $CERTFILE. Certificate valid for one year from present date."
 # Delete intermediate files
 rm mycert.csr
