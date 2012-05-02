@@ -22,8 +22,7 @@ int __tests = 0;
 int __fails = 0;
 
 /* A macro that defines an enhanced assert statement. */
-#define test(exp) do { ++__tests; if (! (exp)) { ++__fails; fprintf (stderr, "Test failed: %s at line: %d\n", #exp, __LINE__); } \
-    { printf("Tests: %d   Failed: %d\n", __tests, __fails); } } while (0)
+#define test(exp) do { ++__tests; if (! (exp)) { ++__fails; fprintf (stderr, "Test failed: %s at line: %d\n", #exp, __LINE__); } } while (0)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Helpers
