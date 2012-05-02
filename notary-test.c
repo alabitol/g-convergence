@@ -17,11 +17,13 @@
 // Globals
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #define MAX_NO_OF_CERTS 7
+#define NUM_OF_CONNECTIONS 10
 int __tests = 0;
 int __fails = 0;
 
 /* A macro that defines an enhanced assert statement. */
-#define test(exp) do { ++__tests; if (! (exp)) { ++__fails; fprintf (stderr, "Test failed: %s at line: %d\n", #exp, __LINE__); } } while (0)
+#define test(exp) do { ++__tests; if (! (exp)) { ++__fails; fprintf (stderr, "Test failed: %s at line: %d\n", #exp, __LINE__); } \
+    { printf("Tests: %d   Failed: %d\n", __tests, __fails); } } while (0)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Helpers
@@ -65,6 +67,76 @@ static void curl_cleanup(CURL* curl_handle)
   curl_global_cleanup();
 }
 
+/**
+ *Helper to create a post request
+ */
+static CURL* create_post_request(char* url, char* fingerprint)
+{
+  CURL* curl_handle;
+  int ssl_port = 7000;
+
+  /* Initialize curl. */
+  curl_global_init(CURL_GLOBAL_ALL);
+  curl_handle = curl_easy_init();
+
+  char *host = malloc(strlen(url) * sizeof(char));
+  strcpy(host, url);
+
+  curl_easy_setopt(curl_handle, CURLOPT_URL, host);
+  curl_easy_setopt(curl_handle, CURLOPT_PORT, ssl_port);
+  curl_easy_setopt(curl_handle, CURLOPT_POST, 1L);
+  curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, fingerprint);
+  curl_easy_setopt(curl_handle, CURLOPT_HEADER, 1L);
+      
+  return curl_handle;
+}
+
+/**
+ * Helper to create a GET request
+ */
+static CURL* create_get_request(char* url)
+{
+  CURL* curl_handle;
+  int ssl_port = 7000;
+  
+  /* Initialize curl. */
+  curl_global_init(CURL_GLOBAL_ALL);
+  curl_handle = curl_easy_init();
+
+  char *host = malloc(strlen(url) * sizeof(char));
+  strcpy(host, url);
+
+  curl_easy_setopt(curl_handle, CURLOPT_URL, host);
+  curl_easy_setopt(curl_handle, CURLOPT_PORT, ssl_port);
+  curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1L);
+  curl_easy_setopt(curl_handle, CURLOPT_HEADER, 1L);
+
+  return curl_handle;
+}
+
+/**
+ * Helper to create a CUSTOM request
+ */
+static CURL* create_custom_request(char* url)
+{
+  CURL* curl_handle;
+  int ssl_port = 7000;
+  
+  /* Initialize curl. */
+  curl_global_init(CURL_GLOBAL_ALL);
+  curl_handle = curl_easy_init();
+
+  char *host = malloc(strlen(url) * sizeof(char));
+  strcpy(host, url);
+
+  curl_easy_setopt(curl_handle, CURLOPT_URL, host);
+  curl_easy_setopt(curl_handle, CURLOPT_PORT, ssl_port);
+  curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, "CUSTOM");
+  curl_easy_setopt(curl_handle, CURLOPT_HEADER, 1L);
+      
+  return curl_handle;
+}
+
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Unit tests for functions implemted in connection.c, certificate.c,
 // response.c, and cache.c.
@@ -90,14 +162,301 @@ test_convergence ()
 
 } // test_convergence
 
+int
+test_answer_to_connection_helper (void *cls, struct MHD_Connection *connection,
+                                  const char *url, const char *method,
+                                  const char *version, const char *upload_data,
+                                  size_t *upload_data_size, void **con_cls)
+{
+  int ret_val;
+
+  /* The first time through only headers are processed. Only the second time
+   * this function is called can we access upload_data.
+   */
+  if (*con_cls == NULL)
+    {
+      struct connection_info_struct *con_info;
+      con_info = malloc (sizeof (struct connection_info_struct));
+
+      /* Process POST and GET request separately. Signal an error
+       * on any other method.
+       */
+      if  (strcmp (method, "POST") == 0)
+        {
+          con_info->connection_type = POST;
+        }
+      else if (strcmp (method, "GET") == 0)
+        {
+          *upload_data_size = 0;
+          con_info->connection_type = GET;
+        }
+      *con_cls = (void *) con_info;
+      return MHD_YES;
+    } // if
+
+  if(*upload_data_size != 0)
+    {
+      *con_cls = NULL;
+      
+      //first time through answer_to_ssl_connection
+      ret_val = answer_to_SSL_connection(cls, connection, url, method, version, upload_data, upload_data_size, con_cls);
+      test(ret_val == MHD_YES);
+      
+      ret_val = answer_to_SSL_connection(cls, connection, url, method, version, upload_data, upload_data_size, con_cls);
+      test(ret_val == MHD_YES);
+      
+      *upload_data_size = 0;
+      return MHD_YES;
+    }
+  else
+    {
+      ret_val = answer_to_SSL_connection(cls, connection, url, method, version, upload_data, upload_data_size, con_cls);
+      test(ret_val == MHD_YES);
+
+      struct connection_info_struct *con_info = *con_cls;
+      if(strcmp (method, "CUSTOM") == 0)
+        {
+          test(con_info->answer_code == MHD_HTTP_BAD_REQUEST);
+        }
+      else
+        {
+          test(con_info->answer_code == MHD_HTTP_OK);
+        }
+
+      return MHD_YES;
+    }
+  
+  return MHD_YES;
+}
+
 void 
 test_answer_to_connection ()
 {
+  int ssl_port = 7000;
+  struct MHD_Daemon *ssl_daemon;
+  int connection_type[NUM_OF_CONNECTIONS] = {1, 0, 2, 0, 1, 2, 0, 0, 1, 1};
+
+  /* To test answer_to_connection, we need MHD_Connection, which is one of its
+   * arguments. To obtain MHD_Connection, we start the MHD_Daemon, make a
+   * request to it using curl, and instruct the daemon to call
+   answer_to_connection for testing
+  */
+  ssl_daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION, 
+                                 ssl_port, 
+                                 NULL, 
+                                 NULL, 
+                                 &test_answer_to_connection_helper,
+                                 NULL, 
+                                 MHD_OPTION_END
+                                 );
+
+  if (ssl_daemon == NULL)
+    {
+      fprintf (stderr, "Error: Failed to start the MHD SSL daemon.\n");
+    }
+  else // for debugging
+    {
+      printf("The daemon is up and running!\n");
+    }
+  
+  /* Send requests to the daemon with curl. */
+  CURL* curl;
+  CURLcode res;
+
+  int i;
+  for(i=0; i<NUM_OF_CONNECTIONS; i++)
+    {
+      if(connection_type[i] == 0)
+        curl = create_post_request("http://localhost/target/https://www.wikipedia.org+443",
+                                   "03:47:7F:F5:F6:3B:F5:B6:10:C0:7D:65:9A:7B:A9:12:D3:20:83:68");
+      else
+        {
+          if(connection_type[i] == 1)
+            {
+              curl = create_get_request("http://localhost/target/https://www.wikipedia.org+443");
+            }
+          else
+            curl = create_custom_request("http://localhost/target/https://www.wikipedia.org+443");
+        }
+      
+      /* Set curl options. */
+      if (curl)
+        {      
+          /* Make the curl request. */
+          res = curl_easy_perform(curl);
+          
+          if (!res)
+            {
+              /* Verify if the response was received by the client. */   
+              curl_cleanup(curl);
+            }
+          else
+            {
+              /* Curl did not succeed in sending the request. */
+              fprintf(stderr, "here Could not send request to server\n");
+              curl_cleanup(curl);
+            } // if (!res)
+        }
+      else
+        {
+          fprintf(stderr, "Could not initialize CURL\n");
+          curl_cleanup(curl);
+        } // if (curl)
+    }//for
+  
+  MHD_stop_daemon(ssl_daemon);
 } // test_answer_to_connection
+
+
+int
+test_request_completed_helper(void *cls, struct MHD_Connection *connection,
+                              const char *url, const char *method,
+                              const char *version, const char *upload_data,
+                              size_t *upload_data_size, void **con_cls)
+{
+  int ret_val;
+
+  /* The first time through only headers are processed. Only the second time
+   * this function is called can we access upload_data.
+   */
+  if (*con_cls == NULL)
+    {
+      struct connection_info_struct *con_info;
+      con_info = malloc (sizeof (struct connection_info_struct));
+
+      /* Process POST and GET request separately. Signal an error
+       * on any other method.
+       */
+      if  (strcmp (method, "POST") == 0)
+        {
+          con_info->connection_type = POST;
+        }
+      else if (strcmp (method, "GET") == 0)
+        {
+          *upload_data_size = 0;
+          con_info->connection_type = GET;
+        }
+      *con_cls = (void *) con_info;
+      return MHD_YES;
+    } // if
+
+  if(*upload_data_size != 0)
+    {
+      *upload_data_size = 0;
+
+      return MHD_YES;
+    }
+  else
+    {
+      const char *json_fingerprint_list = 
+        "{\n \
+    \t\"fingerprintList\":\n \
+\t[\n \
+\t {\n \
+\t \"timestamp\": {\"start\": \"1292636531\", \"finish\": \"1292754629\"},\n \
+\t \"fingerprint\": \"BF:E1:FE:03:10:E9:CB:DC:96:BF:3D:AA:6E:C6:03:E5:31:CD:A9:9C\"\n \
+\t }\n \
+\t],\n \
+}\n";
+      struct connection_info_struct *con_info = *con_cls;
+      
+      con_info->answer_string = malloc(sizeof(char) * strlen(json_fingerprint_list) + 1);
+      strcpy((char*)con_info->answer_string, json_fingerprint_list);
+      con_info->answer_code = MHD_HTTP_OK;
+
+      ret_val = send_response(connection, json_fingerprint_list, con_info->answer_code);
+      
+      request_completed(cls, connection, con_cls, con_info->answer_code);
+
+      //check if request_completed did its job
+      test(*con_cls == NULL);
+      test(con_info->answer_string == NULL);
+
+      return MHD_YES;
+    }
+
+  return MHD_YES;
+}
+
 
 void 
 test_request_completed ()
 { 
+
+  int ssl_port = 7000;
+  struct MHD_Daemon *ssl_daemon;
+  int connection_type[NUM_OF_CONNECTIONS] = {0, 1, 2, 0, 0, 1, 2, 2, 0, 1};
+
+  /* To test answer_to_connection, we need MHD_Connection, which is one of its
+   * arguments. To obtain MHD_Connection, we start the MHD_Daemon, make a
+   * request to it using curl, and instruct the daemon to call
+   answer_to_connection for testing
+  */
+  ssl_daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION,
+                                 ssl_port,
+                                 NULL,
+                                 NULL,
+                                 &test_request_completed_helper,
+                                 NULL,
+                                 MHD_OPTION_END
+                                 );
+
+  if (ssl_daemon == NULL)
+    {
+      fprintf (stderr, "Error: Failed to start the MHD SSL daemon.\n");
+    }
+  else // for debugging
+    {
+      printf("The daemon is up and running!\n");
+    }
+  
+  /* Send requests to the daemon with curl. */
+  CURL* curl;
+  CURLcode res;
+  int i;
+
+  for(i=0; i<NUM_OF_CONNECTIONS; i++)
+    {
+      if(connection_type[i] == 0)
+        curl = create_post_request("http://localhost/target/https://www.wikipedia.org+443",
+                                   "03:47:7F:F5:F6:3B:F5:B6:10:C0:7D:65:9A:7B:A9:12:D3:20:83:68");
+      else
+        {
+          if(connection_type[i] == 1)
+            {
+              curl = create_get_request("http://localhost/target/https://www.wikipedia.org+443");
+            }
+          else
+            curl = create_custom_request("http://localhost/target/https://www.wikipedia.org+443");
+        }
+      
+      /* Set curl options. */
+      if (curl)
+        {
+          /* Make the curl request. */
+          res = curl_easy_perform(curl);
+          
+          if (!res)
+            {
+              /* Verify if the response was received by the client. */
+              curl_cleanup(curl);
+            }
+          else
+            {
+              /* Curl did not succeed in sending the request. */
+              fprintf(stderr, "here Could not send request to server\n");
+              curl_cleanup(curl);
+            } // if (!res)
+        }
+      else
+        {
+          fprintf(stderr, "Could not initialize CURL\n");
+          curl_cleanup(curl);
+        } // if (curl)
+    }//for
+  
+  MHD_stop_daemon(ssl_daemon);
+
 } // test_request_completed
 
 void 
@@ -294,7 +653,6 @@ test_send_response_helper (void *cls, struct MHD_Connection *connection,
   /* This gets executed the second time the function is called. Only now can
    * we access upload_data.
    */
-  struct connection_info_struct *con_info = *con_cls;
   
   /* Response strings for the server to return. */
   const char *busy_page = 
@@ -326,7 +684,7 @@ test_send_response_helper (void *cls, struct MHD_Connection *connection,
       /* This is the third time this function is called. */
 
       /* Get the test number which determines the appropriate response. */
-      request_num = url[25];
+      request_num = url[33];
       switch (atoi(&request_num))
         {
           // Potential scenarios
@@ -385,41 +743,34 @@ test_send_response ()
       fprintf (stderr, "Error: Failed to start the MHD SSL daemon.\n");
     }
   else // for debugging
-  {
-    fprintf(stderr, "The daemon is up and running!\n");
-  }
+    {
+      printf("The daemon is up and running!\n");
+    }
   
   /* Send requests to the daemon with curl. */
   CURL *curl;
   CURLcode res;
-  char buffer[1024];
 
   /* Send multiple requests. */
   for (i = 0; i < num_tests; i++)
     {
-      /* Initialize curl. */
-      curl_global_init(CURL_GLOBAL_ALL);
-      curl = curl_easy_init();
+      /* We want to send a POST request to the daemon. */
+      char *host = malloc(56 * sizeof(char));
+      sprintf(host, "http://localhost/target/https://www.wikipedia.org%d+443", i);
+      char* finger =
+        "03:47:7F:F5:F6:3B:F5:B6:10:C0:7D:65:9A:7B:A9:12:D3:20:83:68";
+
+      curl = create_post_request(host, finger);
+      free(host);
 
       /* Set curl options. */
       if (curl)
         {
-          char* finger =
-            "fingerprint=03:47:7F:F5:F6:3B:F5:B6:10:C0:7D:65:9A:7B:A9:12:D3:20:83:68";
-    
-          /* We want to send a test request to the daemon. */
-          char *host = malloc(47 * sizeof(char));
-          sprintf(host, "http://localhost/target/www.wikipedia.org%d+443", i);
-          curl_easy_setopt(curl, CURLOPT_URL, host);
-          curl_easy_setopt(curl, CURLOPT_PORT, ssl_port);
-          curl_easy_setopt(curl, CURLOPT_POSTFIELDS, finger);
-          
           /* Make the curl request. */
           res = curl_easy_perform(curl);
           if (!res)
             {
               /* Verify if the response was received by the client. */
-             
               curl_cleanup(curl);
             }
           else
@@ -452,6 +803,9 @@ test_request_certificate ()
   int index_of_last_char, number_of_certs;
   host *host_to_verify = malloc (sizeof(host));
 
+  //Set the port to connect to  
+  host_to_verify->port = 443;
+
   valids = fopen ("valid_urls.txt", "r");
   if (valids == NULL)
   {
@@ -482,15 +836,19 @@ test_request_certificate ()
       //get the url from the string gotten from the file and construct host
       url = strtok(string_read, "' '");
       host_to_verify->url = url;
-      host_to_verify->port = 443;
+
       //then get the fingerprint
       correct_fingerprint = strtok(NULL, "' '");
+      printf("Its: %s\n", correct_fingerprint);
 
       //Get the fingerprint by calling request_certificate
       number_of_certs = request_certificate(host_to_verify, retrieved_fingerprints);
       printf("%d certs found\n", number_of_certs);
 
-      test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) == 0);
+      for(i=0; i<number_of_certs; i++)
+        printf("%s\n", retrieved_fingerprints[i]);
+
+      test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) == 1);
 
       //reset all the characters in each string to null to allow for the
       //next iteration of fingerprint conversion
@@ -510,7 +868,7 @@ test_request_certificate ()
       //get the url from the string gotten from the file
       url = strtok(string_read, "' '");
       host_to_verify->url = url;
-      host_to_verify->port = 443;
+
       //then get the fingerprint
       correct_fingerprint = strtok(NULL, "' '");
 
@@ -518,7 +876,7 @@ test_request_certificate ()
       number_of_certs = request_certificate(host_to_verify, retrieved_fingerprints);
 
       //Check if the fingerprints are the same
-      test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) != 0);
+      test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) == 0);
 
       //reset all the characters in each string to null to allow for the
       //next iteration of fingerprint convers
@@ -637,18 +995,19 @@ main (int argc, char *argv[])
 {
   /* Test all functions here. */
   //test_convergence ();
-  //test_request_completed ();
+  //test_answer_to_connection();
+  test_request_completed ();
   //test_retrieve_response ();
   //test_send_response ();
   //test_retrieve_post_response ();
-  test_send_response ();
+  //test_send_response ();
   //test_request_certificate ();
   //test_verify_fingerprint_format();
   //test_is_in_cache ();
   //test_cache_remove ();
   //test_cache_insert ();
   //test_cache_update ();
-  //test_verify_certificate();
+  // test_verify_certificate();
 
   printf("tests: %d,  failed: %d\n", __tests, __fails);
 
