@@ -29,9 +29,9 @@ int __fails = 0;
 /* A macro that defines an enhanced assert statement. */
 #define test(exp) do { ++__tests; if (! (exp)) { ++__fails; fprintf (stderr, "Test failed: %s at line: %d\n", #exp, __LINE__); } } while (0)
 
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Helpers
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 /**
  * Get information about the amount of dynamically allocated address space
@@ -194,8 +194,7 @@ send_curl_requests()
 } // send_curl_requests
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Unit tests for functions implemted in connection.c, certificate.c,
-// response.c, and cache.c.
+// Unit tests
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 /** 
@@ -218,6 +217,9 @@ test_convergence ()
 
 } // test_convergence
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Tests for functions in connection.c.
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 int
 test_answer_to_connection_helper (void *cls, struct MHD_Connection *connection,
                                   const char *url, const char *method,
@@ -427,6 +429,9 @@ test_request_completed ()
 
 } // test_request_completed
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Tests for functions in response.c.
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void 
 test_retrieve_response ()
 {
@@ -759,6 +764,9 @@ test_send_response ()
   
 } // test_send_response
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Tests for functions in certificate.c.
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void 
 test_request_certificate ()
 {
@@ -935,21 +943,38 @@ test_verify_fingerprint_format ()
   
 } // test_verify_fingerprint_format
 
-/* Cache will be added later as an extension. */
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Tests for functions in cache.c
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void
+test_is_fingerprint_safe()
+{
+} // test_is_fingerprint_safe
+
+void
+test_is_url_safe()
+{
+} // test_is_url_safe
+
 void
 test_is_in_cache ()
 {
 } // test_verify_certificate
 
 void
-test_cache_remove ()
+test_is_blacklisted()
 {
-} // test_cache_remove
+} // test_is_blacklisted
 
 void 
 test_cache_insert ()
 {
 } // test_cache_insert
+
+void
+test_cache_remove ()
+{
+} // test_cache_remove
 
 void 
 test_cache_update ()

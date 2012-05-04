@@ -9,59 +9,49 @@
 #define CACHE_H
 
 #include "notary.h"
-#include <mysql.h> //FIXME?
+#include <mysql.h> 
 
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Helpers
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-/* Opens an SQL conenction, and returns a pointer to it. Exits and returns 
- * an error if connection cannot be established.
- */
-MYSQL* start_mysql_connection();
-
-/* Closes the db connection.
- */
-void close_mysql_connection();
+#define TRUSTED true
+#define BLACKLISTED false
 
 /* Determines whether given fingerprint can be safely inserted.
- * Returns true if it is safe, false otherwise.
+ * Returns 1 if it is safe. Otherwise returns 0.
  */
-boolean is_fingerprint_safe(char *fingerprint);
+int is_fingerprint_safe(char *fingerprint);
 
 /* Determines whether given url can be safely inserted.
- * Returns true if it is safe, false otherwise.
+ * Returns 1 if it is safe. Otherwise returns 0.
  */ 
-boolean is_url_safe(char *url);
-
-
+int is_url_safe(char *url);
 
 /* Checks if a particular fingerprint is in the cache already, 
  * either as the fingerprint of a trusted url or a blacklisted url. 
- * Returns true if the cache has a fingerprint for the url, 
- * returns false if it's not. Returns an error if we couldn't connect to db. 
+ * Returns 1 if the cache has a fingerprint for the url, 
+ * otherwise returns 0. Returns -1 if error is encountered.
  */
-boolean is_in_cache (char *url);
+int is_in_cache (char *url);
 
-/* Checks if we have a record of a url in the blacklist. Returns true if 
- * the url is in the blacklist and false if it's not. Returns an error
- * if we could not connect to db.
+/* Checks if we have a record of a url in the blacklist. Returns 1 if 
+ * the url is in the blacklist and 0 if it is not. 
+ * Returns -1 if error is encountered.
  */
-boolean is_blacklisted (char *url); 
+int is_blacklisted (char *url); 
 
 /* Inserts a certificate fingerprint into the cache.
- * Inserts into trusted cache is location is set to true,
- *  inserts into blacklisted cache if location is false.
- * Returns 0 if insert is successful, otherwise returns an error.
+ * Inserts into trusted cache is trusted_db is set to true;
+ * otherwise, inserts into blacklist cache.
+ * Returns 1 if insert is successful. Otherwise, returns 0.
  */ 
-int cache_insert (char* url, char* fingerprint, boolean location);
+int cache_insert (char* url, char* fingerprint, boolean trusted_db);
 
 /* Remove a specific certificate fingerprint from the cache. 
- * Returns 0 if removal is successful, otherwise returns an error. 
+ * Removes from trusted cache if trusted_db is set to true;
+ * otherwise, removes from blacklist cache.
+ * Returns 0 if removal is successful, otherwise returns -1.
  */
-int cache_remove (char* fingerprint);
+int cache_remove (char* fingerprint, boolean trusted_db);
 
-/* Removes cache entries that are older than 1 day.
+/* Removes cache entries that have expired from trusted cache.
  */
 int cache_update ();
 
