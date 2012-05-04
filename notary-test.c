@@ -60,7 +60,7 @@ static size_t write_function (void *ptr,  size_t  size,  size_t  nmemb,  void *s
   (void) stream;
   (void) ptr;
   return size * nmemb;
-}
+} // write_function
 
 /**
  * Combines curl cleanup calls. 
@@ -69,7 +69,7 @@ static void curl_cleanup(CURL* curl_handle)
 {
   curl_easy_cleanup(curl_handle);
   curl_global_cleanup();
-}
+} // curl_cleanup
 
 /**
  *Helper to create a post request
@@ -93,7 +93,7 @@ static CURL* create_post_request(char* url, char* fingerprint)
   curl_easy_setopt(curl_handle, CURLOPT_HEADER, 1L);
       
   return curl_handle;
-}
+} // create_post_request
 
 /**
  * Helper to create a GET request
@@ -116,7 +116,7 @@ static CURL* create_get_request(char* url)
   curl_easy_setopt(curl_handle, CURLOPT_HEADER, 1L);
 
   return curl_handle;
-}
+} // create_get_request
 
 /**
  * Helper to create a CUSTOM request
@@ -139,7 +139,7 @@ static CURL* create_custom_request(char* url)
   curl_easy_setopt(curl_handle, CURLOPT_HEADER, 1L);
       
   return curl_handle;
-}
+} // create_custom_request
 
 /* Function that sends HTTP requests to a running MHD_Daemon. */
 void
@@ -426,6 +426,42 @@ test_request_completed ()
   MHD_stop_daemon(ssl_daemon);
 
 } // test_request_completed
+
+void
+test_generate_signature()
+{
+  unsigned int *signature_size = malloc (sizeof (unsigned int));
+  unsigned char *signature;
+  RSA *private_key;
+  FILE *key_file;
+  char *json_fingerprint_list = 
+    "{\n \
+    \t\"fingerprintList\":\n \
+\t[\n \
+\t {\n \
+\t \"timestamp\": {\"start\": \"1292636531\", \"finish\": \"1292754629\"},\n \
+\t \"fingerprint\": \"BF:E1:FE:03:10:E9:CB:DC:96:BF:3D:AA:6E:C6:03:E5:31:CD:A9:9C\"\n \
+\t }\n \
+\t],\n \
+}\n";
+
+  key_file = fopen("convergence.key", "r");
+  if (key_file == NULL)
+  {
+    fprintf(stderr, "Could not open convergence.key for reading.\n");
+  } // if
+  private_key = PEM_read_RSAPrivateKey(key_file, NULL, NULL, NULL);
+
+  /* Calculate the signature size and allocate space for it. */
+  *signature_size = (unsigned int) RSA_size(private_key);
+  signature = (unsigned char *) malloc (*signature_size);
+
+int ret_val = generate_signature((unsigned char *) json_fingerprint_list, signature, signature_size, private_key);
+
+  /* Test the return value. */
+  test(ret_val == 1);
+
+} // test_generate_signature
 
 void 
 test_retrieve_response ()
@@ -789,7 +825,7 @@ test_request_certificate ()
     }
 
   //allocate space for the fingerprints
-  int i,j;
+  int i;
   for(i=0; i<MAX_NO_OF_CERTS; i++)
     retrieved_fingerprints[i] = calloc(FPT_LENGTH * sizeof(char), 1);
 
@@ -968,10 +1004,10 @@ main (int argc, char *argv[])
 
   /* Check if the system is leaking memory. */
   before = mem_allocated();
-  test_request_completed ();
+  //test_request_completed ();
   after = mem_allocated();
-  printf ("BEFORE: %d\nAFTER: %d", before, after);
-  test(before==after);
+  //test(before==after);
+  test_generate_signature();
   //test_retrieve_response ();
   //test_send_response ();
   //test_retrieve_post_response ();
