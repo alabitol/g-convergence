@@ -10,8 +10,9 @@ notary.c:
 
 * Compute a message digest from fingerprint_list using SHA-1 and sign it with
   the private key.
-* Write unit tests for answer_to_connection() and request_completed().
-* Determine what C mysql functions we need to use for our cache functions.
+* Fix memory leaks
+* Include an integration test where the notary is running on a different
+  machine
 * Write unit tests for functions in cache.c.
 * Write integration tests for the notary system.
 * Perform fuzz testing- test for receiving random data in requests

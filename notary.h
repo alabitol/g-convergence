@@ -38,6 +38,9 @@
 
 #define PORT 8888
 
+char *key_filename;
+char *certificate_file;
+
 /* GET and POST are the only requests notary handles. */
 enum connection_type
   {
