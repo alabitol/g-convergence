@@ -1,22 +1,24 @@
 /******************************************************************************
  * authors: g-coders
  * created: February 21, 2012
- * revised: April 18, 2012
+ * revised: May 5, 2012
  * Description: This file contains functions which are responsible for
  * managing the cache of verified websites.
  ******************************************************************************/
 #include "notary.h"
+#include "cache.h"
 #include <string.h>
 #include <mysql/mysql.h>
 #include <time.h>
 #include <stdbool.h>
 
+/* The time we want to keep records in the TRUSTED cache. */
 #define CACHE_TIME 1; //FIXME one day
 
 /* Structure of table
  *   trusted
  *   +--------------------------------------------------------------+
- *   | id  | url                  | fingerprint      |  time added  | 
+ *   | id  | url                  | fingerprint      |  timestamp   | 
  *   +--------------------------------------------------------------+
  *   | 1   | https://facebook.com | BL:AH:BL:AH: ..  | TIME         |
  *   | 2   | https://chase.com    | ME:OW:WO:OF: ..  | TIME         |
@@ -24,8 +26,15 @@
  *   +--------------------------------------------------------------+
  * */
 
-// TODO
-// separate making a connection to trusted database and blacklisted database
+/* TODO
+ * need to do some serious refactoring: the pattern repeats:
+     connect to db
+     construct a query
+     execute the query on the db and store the result
+     close connection to db
+     interpret the result
+ * figure out the exact syntax of MYSQL queries
+ */
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Helpers
@@ -33,14 +42,15 @@
 
 /* Opens an SQL conenction, and returns a pointer to it. Exits and returns 
  * an error if connection cannot be established.
- * @return a mysql connection pointer
+ * @returns a mysql connection pointer
  */
 MYSQL* 
-start_mysql_connection()
+start_mysql_connection(bool db)
 {
   //Create a new MYSQL connection struct and set it to the result of the 
   //connection call.
   MYSQL *conn;
+  char *db_name = NULL;
   conn = mysql_init(NULL);
 
   //If the connection wasn't made correctly, return an error
@@ -49,13 +59,24 @@ start_mysql_connection()
       printf("Error %u: %s\n", mysql_errno(conn), mysql_error(conn));
       return NULL;
     }
-  if (mysql_real_connect(conn, "localhost", "zetcode", "passwd", 
-                         NULL, 0, NULL, 0) == NULL) {
-    printf("Error %u: %s\n", mysql_errno(conn), mysql_error(conn));
-    exit(1);
-  }
 
-  //Return the connection struct
+  /* Determine which db to connect to here. */
+  if (db)
+    {
+      asprintf(&db_name, "trusted");
+    }
+  else
+    {
+      asprintf(&db_name, "blacklisted");
+    }
+  
+  if (mysql_real_connect(conn, "localhost", "zetcode", "passwd", 
+                         NULL, 0, NULL, 0) == NULL)
+    {
+      printf("Error %u: %s\n", mysql_errno(conn), mysql_error(conn));
+      exit(1);
+    }
+
   return conn;
 } //start_mysql_connection
 
@@ -87,40 +108,52 @@ int is_url_safe(char *url)
   /* STUB */
 } // is_url_safe
 
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Cache functions
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 /**
  * Checks if a particular fingerprint is in the cache already, 
  * either as the fingerprint of a trusted url or a blacklisted url. 
  * Returns 1 if the cache has a fingerprint for the url, 
  * otherwise returns 0. Returns -1 if error is encountered.
  */
-int is_in_cache (char *fingerprint)
+int is_in_cache (char *url, char *fingerprint)
 {
   MYSQL_RES *result;
   MYSQL_ROW row;
+  MYSQL *conn;
   int num_fields;
-  MYSQL *conn = start_mysql_connection();
+  int blacklisted;
+  char *query_string = NULL;
 
-  if (conn)
+  /* First, check if url is blacklisted. */
+  conn = start_mysql_connection(BLACKLISTED);
+  blacklisted = is_blacklisted(url);
+  close_mysql_connection(conn);
+  if (blacklisted)
     {
-      char *query_string = strcat ("SELECT url FROM trusted WHERE ", url);
-      query_string = strcat(query_string, ";"); 
-
-      mysql_query(conn, query_string);
-      result = mysql_store_result(conn);
-      num_fields = mysql_num_fields(result);
-
-      close_mysql_connection(conn);
-  
-      if (num_fields || is_blacklisted(url))
-	return 1;
-      else 
-	return 0;
+      return 1;
     }
-  else
-  {
-    fprintf(stderr, "Could not connect to database.\n");
-    return -1;
-  }
+
+  conn = start_mysql_connection(TRUSTED);
+  asprintf (&query_string, "SELECT url FROM trusted WHERE fingerprint=%s", fingerprint);
+  query_string = strcat(query_string, ";"); 
+
+  mysql_query(conn, query_string);
+  result = mysql_store_result(conn);
+  num_fields = mysql_num_fields(result);
+
+  close_mysql_connection(conn);
+  
+  if (num_fields)
+    {
+      return 1;
+    }
+  else 
+    {
+      return 0;
+    }
 } //is_in_cache
 
 /* Checks if we have a record of a url in the blacklist. Returns 1 if 
@@ -129,88 +162,64 @@ int is_in_cache (char *fingerprint)
  */
 int is_blacklisted (char *url)
 {
- MYSQL *conn = start_mysql_connection();
+  MYSQL *conn = start_mysql_connection(BLACKLISTED);
 
- if (conn)
- {
-   MYSQL_RES *result;
-   unsigned int num_fields;
+  MYSQL_RES *result;
+  unsigned int num_fields;
 
-   char *query_string = strcat ("SELECT url FROM blacklist WHERE ", url);
-   query_string = strcat(query_string, ";"); 
+  char *query_string = NULL;
+  asprintf (&query_string, "SELECT url FROM blacklist WHERE url=%s;", url);
 
-   mysql_query(conn, query_string);
-   result = mysql_store_result(conn);
-   num_fields = mysql_num_fields(result);
+  mysql_query(conn, query_string);
+  result = mysql_store_result(conn);
+  num_fields = mysql_num_fields(result);
 
-   close_mysql_connection(conn);
+  close_mysql_connection(conn);
    
-   return num_fields;
+  return num_fields;
 
- }
-
- exit(1);
 } //is_blacklisted
 
 /* Inserts a certificate fingerprint into the cache.
- * Inserts into trusted cache is trusted_db is set to true;
+ * Inserts into trusted cache is db is set to true;
  * otherwise, inserts into blacklist cache.
  * Returns 1 if insert is successful. Otherwise, returns 0.
  */ 
-int cache_insert (char* url, char* fingerprint, bool trusted_db)
+int cache_insert (char* url, char* fingerprint, bool db)
 {
   char *query_string = NULL;
-  char *db = malloc(sizeof(char) * 9+1);
   char *timestamp;
   int return_val;
-  MYSQL *conn = start_mysql_connection();
-  if (conn)
-    {
-      /* Compute timestamp. */
+  MYSQL *conn = start_mysql_connection(db);
+ 
+  /* Compute timestamp. */
 
-      /* Determine which db to insert into. */
-      if(trusted_db)
-      {
-	strncpy(db, "trusted", 7+1);
-      }
-      else 
-      {
-	strncpy(db, "blacklist", 9+1);
-      }
+  /* Construct the query string. */
+  asprintf(&query_string, "INSERT INTO %s VALUES (%s, %s, %s)", url, fingerprint, timestamp);
 
-      /* Construct the query string. */
-      asprintf(&query_string, "INSERT INTO %s VALUES (%s, %s, %s )", db, url, fingerprint, timestamp);
+  return_val = mysql_query(conn, query_string);
+  close_mysql_connection(conn);
 
-      return_val = mysql_query(conn, query_string);
-      close_mysql_connection(conn);
-
-      return !return_val;
-    } // if
-
-  return 0;
+  return !return_val;
 } //cache_insert
 
 /* Remove a specific certificate fingerprint from the cache. 
- * Removes from trusted cache if trusted_db is set to true;
+ * Removes from trusted cache if db is set to true;
  * otherwise, removes from blacklist cache.
  * Returns 1 if removal is successful, 0 if fingerprint cannot be removed,
  * and -1 if the fingerprint does not exist in the database. 
  */
-int cache_remove (char* fingerprint, bool trusted_db)
+int cache_remove (char* fingerprint, bool db)
 {
   int return_val;
-  MYSQL *conn = start_mysql_connection();
+  MYSQL *conn = start_mysql_connection(db);
 
-  if (conn)
-    {
-      char *query_string = NULL;
-      asprintf(&query_string, "DELETE FROM trusted( %s )", fingerprint);
-      return_val = mysql_query(conn, query_string); //FIXME
-      close_mysql_connection(conn);
-      return !return_val;
-    }
+  char *query_string = NULL;
+  asprintf(&query_string, "DELETE FROM trusted( %s )", fingerprint);
+  return_val = mysql_query(conn, query_string); //FIXME
+  close_mysql_connection(conn);
 
-  return 0;
+  return !return_val;
 } //cache_remove
 
 /* Removes cache entries that have expired from trusted cache. 
@@ -218,23 +227,17 @@ int cache_remove (char* fingerprint, bool trusted_db)
  */
 int cache_update ()
 {
-  MYSQL *conn = start_mysql_connection();
+  MYSQL *conn = start_mysql_connection(TRUSTED);
   int return_val;
   
-  if(conn) 
-    {
-      /* THIS CODE IS INCOMPLETE! */
-      char *query_string = NULL;
-      asprintf(&query_string, "SELECT * FROM trusted WHERE timestamp < ");
+  /* THIS CODE IS INCOMPLETE! */
+  char *query_string = NULL;
+  asprintf(&query_string, "SELECT * FROM trusted WHERE timestamp < ");
 
-      return_val = mysql_query(conn, "SELECT * FROM __ WHERE timestamp >__");
-      return_val = 
-        mysql_query(conn, "DELETE FROM trusted(fingerprint)"); //FIXME
-      
-      close_mysql_connection(conn);
+  return_val = mysql_query(conn, "SELECT * FROM __ WHERE timestamp >__");
+  return_val = 
+    mysql_query(conn, "DELETE FROM trusted(fingerprint)"); //FIXME
+  close_mysql_connection(conn);
 
-      return !return_val;
-    }
-
-  return 0;
+  return !return_val;
 } //cache_update

@@ -8,9 +8,10 @@
 #ifndef CACHE_H
 #define CACHE_H
 
-#include "notary.h"
-#include <mysql.h> 
-
+/* We maintain two cache databases:
+   TRUSTED:     caches (url, fingerprint) pairs from trusted sites
+   BLACKLISTED: stores blacklisted urls
+*/
 #define TRUSTED true
 #define BLACKLISTED false
 
@@ -29,7 +30,7 @@ int is_url_safe(char *url);
  * Returns 1 if the cache has a fingerprint for the url, 
  * otherwise returns 0. Returns -1 if error is encountered.
  */
-int is_in_cache (char *fingerprint);
+int is_in_cache (char *url, char *fingerprint);
 
 /* Checks if we have a record of a url in the blacklist. Returns 1 if 
  * the url is in the blacklist and 0 if it is not. 
@@ -38,21 +39,22 @@ int is_in_cache (char *fingerprint);
 int is_blacklisted (char *url); 
 
 /* Inserts a certificate fingerprint into the cache.
- * Inserts into trusted cache is trusted_db is set to true;
+ * Inserts into trusted cache is db is set to true;
  * otherwise, inserts into blacklist cache.
  * Returns 1 if insert is successful. Otherwise, returns 0.
  */ 
-int cache_insert (char* url, char* fingerprint, boolean trusted_db);
+int cache_insert (char* url, char* fingerprint, bool db);
 
 /* Remove a specific certificate fingerprint from the cache. 
- * Removes from trusted cache if trusted_db is set to true;
+ * Removes from trusted cache if db is set to true;
  * otherwise, removes from blacklist cache.
  * Returns 1 if removal is successful, 0 if fingerprint cannot be removed,
  * and -1 if the fingerprint does not exist in the database. 
  */
-int cache_remove (char* fingerprint, boolean trusted_db);
+int cache_remove (char* fingerprint, bool db);
 
 /* Removes cache entries that have expired from trusted cache.
+ * @returns 1  if update is successful, otherwise 0
  */
 int cache_update ();
 
