@@ -12,6 +12,7 @@
 #include "connection.h"
 #include "certificate.h"
 #include "response.h"
+#include "cache.h"
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Globals
@@ -468,7 +469,7 @@ int ret_val = generate_signature((unsigned char *) json_fingerprint_list, signat
 
 } // test_generate_signature
 
->>>>>>> 5ce5324f20a6b407a822e3229a342dee88104494
+
 void 
 test_retrieve_response ()
 {
@@ -999,31 +1000,25 @@ test_is_in_cache ()
 {
   MYSQL *connection = start_mysql_connection();
 
-  if (connection)
-  {
-    /* Read in (fingerprint, url) pairs for testing.*/
+  /* Read in (fingerprint, url) pairs for testing.*/
 
-    /* Insert (fingerprint, url) pairs into trusted db. */
-    cache_insert(url, fingerprint, TRUSTED);
+  /* Insert (fingerprint, url) pairs into trusted db. */
+  cache_insert(url, fingerprint, TRUSTED);
 
-    /* Retrieve inserted (fingerprint, url) pairs.*/
-    test(is_in_cache(fingerprint) == 1);
+  /* Retrieve inserted (fingerprint, url) pairs.*/
+  test(is_in_cache(fingerprint) == 1);
 
 
-    /* Insert (fingerprint, url) pairs into blacklisted db. */
-    cache_insert(url, fingerprint, BLACKLISTED);
+  /* Insert (fingerprint, url) pairs into blacklisted db. */
+  cache_insert(url, fingerprint, BLACKLISTED);
 
-    /* Retrieve inserted (fingerprint, url) pairs.*/
-    test(is_in_cache(fingerprint) == 0);
+  /* Retrieve inserted (fingerprint, url) pairs.*/
+  test(is_in_cache(fingerprint) == 0);
 
 
-    /* Attempt to retrieve nonexistent (fingerprint, url) pairs. */
-    test(is_in_cache(non_fingerprint) == 0);
-  }
-  else
-  {
-    fprintf(stderr, "Could not connect to database.\n");
-  }
+  /* Attempt to retrieve nonexistent (fingerprint, url) pairs. */
+  test(is_in_cache(non_fingerprint) == 0);
+  
 
   close_mysql_connection(conn);
 } // test_verify_certificate
@@ -1033,31 +1028,24 @@ test_is_blacklisted()
 {
   MYSQL *connection = start_mysql_connection();
 
-  if (connection)
-  {
-    /* Read in (fingerprint, url) pairs for testing.*/
+  /* Read in (fingerprint, url) pairs for testing.*/
 
-    /* Insert authenticated (fingerprint, url) pairs into trusted db. */
-    cache_insert(url, fingerprint, TRUSTED);
+  /* Insert authenticated (fingerprint, url) pairs into trusted db. */
+  cache_insert(url, fingerprint, TRUSTED);
 
-    /* Ensure authenticated (fingerprint, url) pairs are not blacklisted.*/
-    test(is_blacklisted(url) == 0);
+  /* Ensure authenticated (fingerprint, url) pairs are not blacklisted.*/
+  test(is_blacklisted(url) == 0);
 
 
-    /* Insert (fingerprint, url) pairs into blacklisted db. */
-    cache_insert(url, fingerprint, BLACKLISTED);
+  /* Insert (fingerprint, url) pairs into blacklisted db. */
+  cache_insert(url, fingerprint, BLACKLISTED);
 
-    /* Ensure inserted (fingerprint, url) pairs are blacklisted.*/
-    test(is_blacklisted(url) == 1);
+  /* Ensure inserted (fingerprint, url) pairs are blacklisted.*/
+  test(is_blacklisted(url) == 1);
 
 
-    /* Attempt to retrieve nonexistent (fingerprint, url) pairs. */
-    test(is_in_cache(non_fingerprint) == 0);
-   }
-  else
-  {
-    fprintf(stderr, "Could not connect to database.\n");
-  }
+  /* Attempt to retrieve nonexistent (fingerprint, url) pairs. */
+  test(is_in_cache(non_fingerprint) == 0);
 
   close_mysql_connection(conn);
 } // test_is_blacklisted
@@ -1067,62 +1055,48 @@ test_cache_remove ()
 {
   MYSQL *connection = start_mysql_connection();
 
-  if (connection)
-  {
-    /* Read in (fingerprint, url) pairs for testing.*/
+  /* Read in (fingerprint, url) pairs for testing.*/
 
-    /* Insert (url, fingerprint) pair into trusted cache, remove it, and
-       verify that it does not exist there anymore. */
-    cache_insert(url, fingerprint, TRUSTED);
-    test(cache_remove(fingerprint, TRUSTED) == 1);
-    test(is_in_cache(fingerprint) == 0);
+  /* Insert (url, fingerprint) pair into trusted cache, remove it, and
+     verify that it does not exist there anymore. */
+  cache_insert(url, fingerprint, TRUSTED);
+  test(cache_remove(fingerprint, TRUSTED) == 1);
+  test(is_in_cache(fingerprint) == 0);
 
-    /* Insert (url, fingerprint) pair into blacklisted cache, remove it, and
-       verify that it does not exist there anymore. */
-    cache_insert(url, fingerprint, BLACKLISTED);
-    test(cache_remove(fingerprint, BLACKLISTED) == 1);
-    test(is_in_cache(fingerprint) == 0);
+  /* Insert (url, fingerprint) pair into blacklisted cache, remove it, and
+     verify that it does not exist there anymore. */
+  cache_insert(url, fingerprint, BLACKLISTED);
+  test(cache_remove(fingerprint, BLACKLISTED) == 1);
+  test(is_in_cache(fingerprint) == 0);
 
-    /* Attempt to remove a fingerprint that is not present in the cache. */
-    test(is_in_cache(fingerprint) == 0);
-    test(cache_remove(fingerprint, TRUSTED) == -1);
-    test(is_blacklisted(fingerprint) == 0);
-    test(cache_remove(fingerprint, BLACKLISTED) == -1);
+  /* Attempt to remove a fingerprint that is not present in the cache. */
+  test(is_in_cache(fingerprint) == 0);
+  test(cache_remove(fingerprint, TRUSTED) == -1);
+  test(is_blacklisted(fingerprint) == 0);
+  test(cache_remove(fingerprint, BLACKLISTED) == -1);
   
-  }
-  else
-  {
-    fprintf(stderr, "Could not connect to database.\n");
-  }
-
   close_mysql_connection(conn);
 } // test_cache_remove
 
-  void 
+void 
 test_cache_update ()
 {
   MYSQL *connection = start_mysql_connection();
 
-  if (connection)
-  {
-    /* Manually insert (url, fingerprint) pairs with an old timestamp,
-       which makes them expired. */
+  /* Manually insert (url, fingerprint) pairs with an old timestamp,
+     which makes them expired. */
 
-    test(cache_update() == 1);
-    test(is_in_cache(fingerprint) == 0);
+  test(cache_update() == 1);
+  test(is_in_cache(fingerprint) == 0);
 
-    /* Manually insert (url, fingerprint) pairs with a recent timestamp,
-       so that they persist in the cache after cache is updated. */
+  /* Manually insert (url, fingerprint) pairs with a recent timestamp,
+     so that they persist in the cache after cache is updated. */
     
-    test(cache_update() == 1);
-    test(is_in_cache(fingerprint) == 1);
-  }
-  else
-  {
-    fprintf(stderr, "Could not connect to database.\n");
-  }
+  test(cache_update() == 1);
+  test(is_in_cache(fingerprint) == 1);
+}
 
-  close_mysql_connection(conn);
+close_mysql_connection(conn);
 } // test_cache_update
 
 int
