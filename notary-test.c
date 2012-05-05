@@ -993,29 +993,136 @@ test_is_url_safe()
 {
 } // test_is_url_safe
 
+/* Tests functions is_in_cache and cache_insert. */
 void
 test_is_in_cache ()
 {
+  MYSQL *connection = start_mysql_connection();
+
+  if (connection)
+  {
+    /* Read in (fingerprint, url) pairs for testing.*/
+
+    /* Insert (fingerprint, url) pairs into trusted db. */
+    cache_insert(url, fingerprint, TRUSTED);
+
+    /* Retrieve inserted (fingerprint, url) pairs.*/
+    test(is_in_cache(fingerprint) == 1);
+
+
+    /* Insert (fingerprint, url) pairs into blacklisted db. */
+    cache_insert(url, fingerprint, BLACKLISTED);
+
+    /* Retrieve inserted (fingerprint, url) pairs.*/
+    test(is_in_cache(fingerprint) == 0);
+
+
+    /* Attempt to retrieve nonexistent (fingerprint, url) pairs. */
+    test(is_in_cache(non_fingerprint) == 0);
+  }
+  else
+  {
+    fprintf(stderr, "Could not connect to database.\n");
+  }
+
+  close_mysql_connection(conn);
 } // test_verify_certificate
 
 void
 test_is_blacklisted()
 {
-} // test_is_blacklisted
+  MYSQL *connection = start_mysql_connection();
 
-void 
-test_cache_insert ()
-{
-} // test_cache_insert
+  if (connection)
+  {
+    /* Read in (fingerprint, url) pairs for testing.*/
+
+    /* Insert authenticated (fingerprint, url) pairs into trusted db. */
+    cache_insert(url, fingerprint, TRUSTED);
+
+    /* Ensure authenticated (fingerprint, url) pairs are not blacklisted.*/
+    test(is_blacklisted(url) == 0);
+
+
+    /* Insert (fingerprint, url) pairs into blacklisted db. */
+    cache_insert(url, fingerprint, BLACKLISTED);
+
+    /* Ensure inserted (fingerprint, url) pairs are blacklisted.*/
+    test(is_blacklisted(url) == 1);
+
+
+    /* Attempt to retrieve nonexistent (fingerprint, url) pairs. */
+    test(is_in_cache(non_fingerprint) == 0);
+   }
+  else
+  {
+    fprintf(stderr, "Could not connect to database.\n");
+  }
+
+  close_mysql_connection(conn);
+} // test_is_blacklisted
 
 void
 test_cache_remove ()
 {
+  MYSQL *connection = start_mysql_connection();
+
+  if (connection)
+  {
+    /* Read in (fingerprint, url) pairs for testing.*/
+
+    /* Insert (url, fingerprint) pair into trusted cache, remove it, and
+       verify that it does not exist there anymore. */
+    cache_insert(url, fingerprint, TRUSTED);
+    test(cache_remove(fingerprint, TRUSTED) == 1);
+    test(is_in_cache(fingerprint) == 0);
+
+    /* Insert (url, fingerprint) pair into blacklisted cache, remove it, and
+       verify that it does not exist there anymore. */
+    cache_insert(url, fingerprint, BLACKLISTED);
+    test(cache_remove(fingerprint, BLACKLISTED) == 1);
+    test(is_in_cache(fingerprint) == 0);
+
+    /* Attempt to remove a fingerprint that is not present in the cache. */
+    test(is_in_cache(fingerprint) == 0);
+    test(cache_remove(fingerprint, TRUSTED) == -1);
+    test(is_blacklisted(fingerprint) == 0);
+    test(cache_remove(fingerprint, BLACKLISTED) == -1);
+  
+  }
+  else
+  {
+    fprintf(stderr, "Could not connect to database.\n");
+  }
+
+  close_mysql_connection(conn);
 } // test_cache_remove
 
-void 
+  void 
 test_cache_update ()
 {
+  MYSQL *connection = start_mysql_connection();
+
+  if (connection)
+  {
+    /* Manually insert (url, fingerprint) pairs with an old timestamp,
+       which makes them expired. */
+
+    test(cache_update() == 1);
+    test(is_in_cache(fingerprint) == 0);
+
+    /* Manually insert (url, fingerprint) pairs with a recent timestamp,
+       so that they persist in the cache after cache is updated. */
+    
+    test(cache_update() == 1);
+    test(is_in_cache(fingerprint) == 1);
+  }
+  else
+  {
+    fprintf(stderr, "Could not connect to database.\n");
+  }
+
+  close_mysql_connection(conn);
 } // test_cache_update
 
 int
@@ -1033,7 +1140,7 @@ main (int argc, char *argv[])
   //test_request_completed ();
   after = mem_allocated();
   //test(before==after);
-  test_generate_signature();
+  //test_generate_signature();
   //test_retrieve_response ();
   //test_send_response ();
   //test_retrieve_post_response ();
