@@ -193,7 +193,8 @@ int cache_insert (char* url, char* fingerprint, bool trusted_db)
 /* Remove a specific certificate fingerprint from the cache. 
  * Removes from trusted cache if trusted_db is set to true;
  * otherwise, removes from blacklist cache.
- * Returns 0 if removal is successful, otherwise returns -1.
+ * Returns 1 if removal is successful, 0 if fingerprint cannot be removed,
+ * and -1 if the fingerprint does not exist in the database. 
  */
 int cache_remove (char* fingerprint, bool trusted_db)
 {
