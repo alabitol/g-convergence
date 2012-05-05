@@ -8,12 +8,29 @@
 #ifndef CACHE_H
 #define CACHE_H
 
-/* We maintain two cache databases:
+#include "notary.h"
+#include <string.h>
+#include <mysql/mysql.h>
+#include <time.h>
+#include <stdbool.h>
+
+/* We maintain two tables in the db
    TRUSTED:     caches (url, fingerprint) pairs from trusted sites
    BLACKLISTED: stores blacklisted urls
 */
 #define TRUSTED true
 #define BLACKLISTED false
+
+/* Opens an SQL conenction, and returns a pointer to it. Exits and returns 
+ * an error if connection cannot be established.
+ * @returns a mysql connection pointer
+ */
+MYSQL* start_mysql_connection();
+
+/* Closes the db connection.
+ * @param connection a pointer to MYSQL connection
+ */ 
+void close_mysql_connection(MYSQL *connection);
 
 /* Determines whether given fingerprint can be safely inserted.
  * Returns 1 if it is safe. Otherwise returns 0.
