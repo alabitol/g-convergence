@@ -93,7 +93,7 @@ int is_url_safe(char *url)
  * Returns 1 if the cache has a fingerprint for the url, 
  * otherwise returns 0. Returns -1 if error is encountered.
  */
-int is_in_cache (char *url)
+int is_in_cache (char *fingerprint)
 {
   MYSQL_RES *result;
   MYSQL_ROW row;

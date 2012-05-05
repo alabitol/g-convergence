@@ -29,7 +29,7 @@ int is_url_safe(char *url);
  * Returns 1 if the cache has a fingerprint for the url, 
  * otherwise returns 0. Returns -1 if error is encountered.
  */
-int is_in_cache (char *url);
+int is_in_cache (char *fingerprint);
 
 /* Checks if we have a record of a url in the blacklist. Returns 1 if 
  * the url is in the blacklist and 0 if it is not. 
