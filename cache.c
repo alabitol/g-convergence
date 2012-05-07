@@ -8,7 +8,7 @@
 #include "cache.h"
 
 /* The time we want to keep records in the TRUSTED cache. */
-#define CACHE_TIME 1; //FIXME one day
+#define CACHE_TIME 1 //FIXME one day
 
 /* Structure of table
  *   trusted

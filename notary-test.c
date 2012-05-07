@@ -45,24 +45,6 @@ mem_allocated ()
   return info.uordblks;
 } // mem_allocated
 
-
-/**
- * Write Function: tell the curl functions where to write the data they
- * receive from a network
- *
- * @param ptr a pointer to the location where the data will be stored
- * @param size,
- * @param nmemb, the size of the data written
- * @param stream
- * @return 
- */
-static size_t write_function (void *ptr,  size_t  size,  size_t  nmemb,  void *stream)
-{
-  (void) stream;
-  (void) ptr;
-  return size * nmemb;
-} // write_function
-
 /**
  * Combines curl cleanup calls. 
  */
@@ -984,124 +966,205 @@ test_verify_fingerprint_format ()
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Tests for functions in cache.c
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-void
-test_is_fingerprint_safe()
-{
-} // test_is_fingerprint_safe
 
 void
 test_is_url_safe()
 {
+  /* Try to insert malformed URLs into the cache. */
+  int index_of_last_char;
+  FILE *malformed_urls = fopen("malformed_urls.txt", "r");
+  int size = 250;
+  char input_line[size];
+  char *url;
+
+  if (malformed_urls == NULL)
+    {
+      fprintf(stderr, "Could not open malformed_urls.txt.\n");
+      exit(1);
+    }
+
+  /* Read in malformed urls from a file. */
+  while (fgets (input_line, size, malformed_urls) != NULL)
+    {
+      //First get rid of the newline character at the end of each line in the file
+      index_of_last_char = strlen(input_line) - 1;
+      if(input_line[index_of_last_char] == '\n')
+        input_line[index_of_last_char] = '\0';
+
+      url = strtok(input_line, "\n");
+
+      test(is_url_safe(url) == 0);
+    } // while
 } // test_is_url_safe
 
 /* Tests functions is_in_cache and cache_insert. */
 void
 test_is_in_cache ()
 {
+  int index_of_last_char;
   MYSQL *connection = start_mysql_connection();
+  FILE *valid_urls = fopen("valid_urls.txt", "r");
+  FILE *invalid_fpts = fopen("invalid_fpts.txt", "r");
+  int size = 250;
+  char input_line[size];
+  char *url, *fingerprint, *non_fingerprint;
+
+  if (valid_urls == NULL)
+    {
+      fprintf(stderr, "Could not open valid_urls.txt.\n");
+      exit(1);
+    }
 
   /* Read in (fingerprint, url) pairs for testing.*/
+  while (fgets (input_line, size, valid_urls) != NULL)
+    {
+      //First get rid of the newline character at the end of each line in the file
+      index_of_last_char = strlen(input_line) - 1;
+      if(input_line[index_of_last_char] == '\n')
+        input_line[index_of_last_char] = '\0';
 
-  /* Insert (fingerprint, url) pairs into trusted db. */
-  cache_insert(url, fingerprint, TRUSTED);
+      url = strtok(input_line, " ");
+      fingerprint = strtok(NULL, " ");
 
-  /* Retrieve inserted (fingerprint, url) pairs.*/
-  test(is_in_cache(fingerprint) == 1);
+      /* Test Case 1 */
+      /* Insert (fingerprint, url) pairs into trusted db. */
+      cache_insert(url, fingerprint, TRUSTED);
 
-
-  /* Insert (fingerprint, url) pairs into blacklisted db. */
-  cache_insert(url, fingerprint, BLACKLISTED);
-
-  /* Retrieve inserted (fingerprint, url) pairs.*/
-  test(is_in_cache(fingerprint) == 0);
+      /* Retrieve inserted (fingerprint, url) pairs from trusted db. */
+      test(is_in_cache(url, fingerprint) == 1);
 
 
-  /* Attempt to retrieve nonexistent (fingerprint, url) pairs. */
-  test(is_in_cache(non_fingerprint) == 0);
+      /* Test Case 2 */
+      /* Insert (fingerprint, url) pairs into blacklisted db. */
+      cache_insert(url, fingerprint, BLACKLISTED);
+
+      /* Retrieve inserted (fingerprint, url) pairs from blacklisted db. */
+      test(is_in_cache(url, fingerprint) == 0);
+    } // while
   
 
-  close_mysql_connection(conn);
-} // test_verify_certificate
-
-void
-test_is_blacklisted()
-{
-  MYSQL *connection = start_mysql_connection();
+  if (invalid_fpts == NULL)
+    {
+      fprintf(stderr, "Could not open invalid_fpts.txt.\n");
+      exit(1);
+    }
 
   /* Read in (fingerprint, url) pairs for testing.*/
+  while (fgets (input_line, size, invalid_fpts) != NULL)
+    {
+      //First get rid of the newline character at the end of each line in the file
+      index_of_last_char = strlen(input_line) - 1;
+      if(input_line[index_of_last_char] == '\n')
+        input_line[index_of_last_char] = '\0';
 
-  /* Insert authenticated (fingerprint, url) pairs into trusted db. */
-  cache_insert(url, fingerprint, TRUSTED);
+      url = strtok(input_line, " ");
+      non_fingerprint = strtok(NULL, " ");
 
-  /* Ensure authenticated (fingerprint, url) pairs are not blacklisted.*/
-  test(is_blacklisted(url) == 0);
+      /* Test Case 3 */
+      /* Attempt to retrieve nonexistent (fingerprint, url) pairs. */
+      test(is_in_cache(url, non_fingerprint) == 0);
+    } // while
 
-
-  /* Insert (fingerprint, url) pairs into blacklisted db. */
-  cache_insert(url, fingerprint, BLACKLISTED);
-
-  /* Ensure inserted (fingerprint, url) pairs are blacklisted.*/
-  test(is_blacklisted(url) == 1);
-
-
-  /* Attempt to retrieve nonexistent (fingerprint, url) pairs. */
-  test(is_in_cache(non_fingerprint) == 0);
-
-  close_mysql_connection(conn);
-} // test_is_blacklisted
+  close_mysql_connection(connection);
+} // test_verify_certificate
 
 void
 test_cache_remove ()
 {
   MYSQL *connection = start_mysql_connection();
+  int index_of_last_char;
+  FILE *valid_urls = fopen("valid_urls.txt", "r");
+  int size = 250;
+  char input_line[size];
+  char *url, *fingerprint;
+
+  if (valid_urls == NULL)
+    {
+      fprintf(stderr, "Could not open valid_urls.txt.\n");
+      exit(1);
+    }
 
   /* Read in (fingerprint, url) pairs for testing.*/
+  while (fgets (input_line, size, valid_urls) != NULL)
+    {
+      //First get rid of the newline character at the end of each line in the file
+      index_of_last_char = strlen(input_line) - 1;
+      if(input_line[index_of_last_char] == '\n')
+        input_line[index_of_last_char] = '\0';
 
-  /* Insert (url, fingerprint) pair into trusted cache, remove it, and
-     verify that it does not exist there anymore. */
-  cache_insert(url, fingerprint, TRUSTED);
-  test(cache_remove(fingerprint, TRUSTED) == 1);
-  test(is_in_cache(fingerprint) == 0);
+      url = strtok(input_line, " ");
+      fingerprint = strtok(NULL, " ");
 
-  /* Insert (url, fingerprint) pair into blacklisted cache, remove it, and
-     verify that it does not exist there anymore. */
-  cache_insert(url, fingerprint, BLACKLISTED);
-  test(cache_remove(fingerprint, BLACKLISTED) == 1);
-  test(is_in_cache(fingerprint) == 0);
 
-  /* Attempt to remove a fingerprint that is not present in the cache. */
-  test(is_in_cache(fingerprint) == 0);
-  test(cache_remove(fingerprint, TRUSTED) == -1);
-  test(is_blacklisted(fingerprint) == 0);
-  test(cache_remove(fingerprint, BLACKLISTED) == -1);
+      /* Test Case 1 */
+      /* Insert (url, fingerprint) pair into trusted cache, remove it, and
+         verify that it does not exist there anymore. */
+      cache_insert(url, fingerprint, TRUSTED);
+      test(cache_remove(fingerprint, TRUSTED) == 1);
+      test(is_in_cache(url, fingerprint) == 0);
+
+      /* Test Case 2 */
+      /* Insert (url, fingerprint) pair into blacklisted cache, remove it, and
+         verify that it does not exist there anymore. */
+      cache_insert(url, fingerprint, BLACKLISTED);
+      test(cache_remove(fingerprint, BLACKLISTED) == 1);
+      test(is_in_cache(url, fingerprint) == 0);
+
+      /* Test Case 3 */
+      /* Attempt to remove a fingerprint that is not present in the cache. */
+      test(cache_remove(fingerprint, TRUSTED) == -1);
+      test(cache_remove(fingerprint, BLACKLISTED) == -1);
+    } // while
   
-  close_mysql_connection(conn);
+  close_mysql_connection(connection);
 } // test_cache_remove
 
 void 
 test_cache_update ()
 {
   MYSQL *connection = start_mysql_connection();
+  int index_of_last_char;
+  FILE *valid_urls = fopen("valid_urls.txt", "r");
+  int size = 250;
+  char input_line[size];
+  char *url, *fingerprint;
 
-  /* Manually insert (url, fingerprint) pairs with an old timestamp,
-     which makes them expired. */
+  if (valid_urls == NULL)
+    {
+      fprintf(stderr, "Could not open valid_urls.txt.\n");
+      exit(1);
+    }
 
-  test(cache_update() == 1);
-  test(is_in_cache(fingerprint) == 0);
+  /* Read in (fingerprint, url) pairs for testing.*/
+  while (fgets (input_line, size, valid_urls) != NULL)
+    {
+      //First get rid of the newline character at the end of each line in the file
+      index_of_last_char = strlen(input_line) - 1;
+      if(input_line[index_of_last_char] == '\n')
+        input_line[index_of_last_char] = '\0';
 
-  /* Manually insert (url, fingerprint) pairs with a recent timestamp,
-     so that they persist in the cache after cache is updated. */
-    
-  test(cache_update() == 1);
-  test(is_in_cache(fingerprint) == 1);
-}
+      url = strtok(input_line, " ");
+      fingerprint = strtok(NULL, " ");
 
-close_mysql_connection(conn);
+      /* Test Case 1 */
+      /* Remove (url, fingerprint) pair from trusted db. */
+      cache_insert(url, fingerprint, TRUSTED);
+      test(cache_update() == 1);
+      test(is_in_cache(url, fingerprint) == 0);
+
+      /* Test Case 2 */
+      /* Remove (url, fingerprint) pair which does not exist in trusted
+         db. */
+      test(cache_update() == 0);
+
+    } // while
+
+  close_mysql_connection(connection);
 } // test_cache_update
 
 int
 main (int argc, char *argv[])
-{
+  {
   /* Variables to keep track of allocated memory. */
   int before, after;
 
