@@ -254,43 +254,12 @@ int verify_certificate (const char *fingerprint_from_client, char **fingerprints
 int
 verify_fingerprint_format (char *fingerprint)
 {
-  /* Length of SHA-1 fingerprint */
-  int fpt_length = 59;
-  int i;
-
-  /* Check the length of the fingerprint. */
-  if (strlen (fingerprint) != fpt_length)
-    return 0;
-
-  /* Check three characters at a time until reaching the last colon. There are
-   * 19 sequences of two hex and one colon characters.
-   */
-  for (i = 0; i < fpt_length-2; i++)
-    {
-      /* Check if the first two characters are hex and the third a colon. */
-      if (isxdigit (fingerprint[i]))
-        i++;
-      else 
-        return 0;
-
-      if (isxdigit (fingerprint[i]))
-        i++;
-      else
-        return 0;
-
-      if (! (fingerprint[i] == ':') )
-        return 0;
-
-    }
-
-  /* Check the last two characters. */
-  if (isxdigit (fingerprint[i]))
-    i++;
-  else 
-    return 0;
-
-  if (isxdigit (fingerprint[i]))
-    return 1;
-  else
-    return 0;
-} // verify_fingerprint_format
+  int retval;
+  regex_t *fingerprint_format = malloc(sizeof(regex_t));
+  
+  regcomp(fingerprint_format, "^(..:){19}..$", 0);
+  retval = regexec(fingerprint_format, fingerprint, 0, NULL, 0);
+  
+  free(fingerprint_format);
+  return !retval;
+}

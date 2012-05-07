@@ -1028,7 +1028,7 @@ test_is_in_cache ()
 
       /* Test Case 1 */
       /* Insert (fingerprint, url) pairs into trusted db. */
-      cache_insert(url, fingerprint, TRUSTED);
+      cache_insert(url, fingerprint, CACHE_TRUSTED);
 
       /* Retrieve inserted (fingerprint, url) pairs from trusted db. */
       test(is_in_cache(url, fingerprint) == 1);
@@ -1036,7 +1036,7 @@ test_is_in_cache ()
 
       /* Test Case 2 */
       /* Insert (fingerprint, url) pairs into blacklisted db. */
-      cache_insert(url, fingerprint, BLACKLISTED);
+      cache_insert(url, fingerprint, CACHE_BLACKLIST);
 
       /* Retrieve inserted (fingerprint, url) pairs from blacklisted db. */
       test(is_in_cache(url, fingerprint) == 0);
@@ -1099,28 +1099,28 @@ test_cache_remove ()
       /* Test Case 1 */
       /* Insert (url, fingerprint) pair into trusted cache, remove it, and
          verify that it does not exist there anymore. */
-      cache_insert(url, fingerprint, TRUSTED);
-      test(cache_remove(fingerprint, TRUSTED) == 1);
+      cache_insert(url, fingerprint, CACHE_TRUSTED);
+      test(cache_remove(fingerprint, CACHE_TRUSTED) == 1);
       test(is_in_cache(url, fingerprint) == 0);
 
       /* Test Case 2 */
       /* Insert (url, fingerprint) pair into blacklisted cache, remove it, and
          verify that it does not exist there anymore. */
-      cache_insert(url, fingerprint, BLACKLISTED);
-      test(cache_remove(fingerprint, BLACKLISTED) == 1);
+      cache_insert(url, fingerprint, CACHE_BLACKLIST);
+      test(cache_remove(fingerprint, CACHE_BLACKLIST) == 1);
       test(is_in_cache(url, fingerprint) == 0);
 
       /* Test Case 3 */
       /* Attempt to remove a fingerprint that is not present in the cache. */
-      test(cache_remove(fingerprint, TRUSTED) == -1);
-      test(cache_remove(fingerprint, BLACKLISTED) == -1);
+      test(cache_remove(fingerprint, CACHE_TRUSTED) == -1);
+      test(cache_remove(fingerprint, CACHE_BLACKLIST) == -1);
     } // while
   
   close_mysql_connection(connection);
 } // test_cache_remove
 
 void 
-test_cache_update ()
+test_cache_update_url ()
 {
   MYSQL *connection = start_mysql_connection();
   int index_of_last_char;
@@ -1148,19 +1148,19 @@ test_cache_update ()
 
       /* Test Case 1 */
       /* Remove (url, fingerprint) pair from trusted db. */
-      cache_insert(url, fingerprint, TRUSTED);
-      test(cache_update() == 1);
+      cache_insert(url, fingerprint, CACHE_TRUSTED);
+      test(cache_update_url(url, fingerprint) == 1);
       test(is_in_cache(url, fingerprint) == 0);
 
       /* Test Case 2 */
       /* Remove (url, fingerprint) pair which does not exist in trusted
          db. */
-      test(cache_update() == 0);
+      test(cache_update_url(url, fingerprint) == 0);
 
     } // while
 
   close_mysql_connection(connection);
-} // test_cache_update
+} // test_cache_update_url
 
 int
 main (int argc, char *argv[])
@@ -1187,7 +1187,7 @@ main (int argc, char *argv[])
   //test_is_in_cache ();
   //test_cache_remove ();
   //test_cache_insert ();
-  //test_cache_update ();
+  //test_cache_update_url ();
   // test_verify_certificate();
 
   printf("tests: %d,  failed: %d\n", __tests, __fails);

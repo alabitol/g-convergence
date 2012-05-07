@@ -9,6 +9,7 @@
 #define CACHE_H
 
 #include "notary.h"
+#include "certificate.h"
 #include <string.h>
 #include <mysql/mysql.h>
 #include <time.h>
@@ -18,8 +19,10 @@
    TRUSTED:     caches (url, fingerprint) pairs from trusted sites
    BLACKLISTED: stores blacklisted urls
 */
-#define TRUSTED true
-#define BLACKLISTED false
+/* The time we want to keep records in the TRUSTED cache. */
+#define CACHE_TIME 1 //FIXME one day
+#define CACHE_TRUSTED 1 // Indicate element is in the trusted database
+#define CACHE_BLACKLIST 2 // Indicate element is in the blacklisted database
 
 /* Opens an SQL conenction, and returns a pointer to it. Exits and returns 
  * an error if connection cannot be established.
@@ -60,7 +63,7 @@ int is_blacklisted (char *url);
  * otherwise, inserts into blacklist cache.
  * Returns 1 if insert is successful. Otherwise, returns 0.
  */ 
-int cache_insert (char* url, char* fingerprint, bool db);
+int cache_insert (char* url, char* fingerprint, int db);
 
 /* Remove a specific certificate fingerprint from the cache. 
  * Removes from trusted cache if db is set to true;
@@ -68,11 +71,11 @@ int cache_insert (char* url, char* fingerprint, bool db);
  * Returns 1 if removal is successful, 0 if fingerprint cannot be removed,
  * and -1 if the fingerprint does not exist in the database. 
  */
-int cache_remove (char* fingerprint, bool db);
+int cache_remove (char* fingerprint, int db);
 
 /* Removes cache entries that have expired from trusted cache.
  * @returns 1  if update is successful, otherwise 0
  */
-int cache_update ();
+int cache_update_url (char *url, char **fingerprints);
 
 #endif // CACHE_H
