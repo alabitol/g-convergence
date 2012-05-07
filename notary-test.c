@@ -12,6 +12,7 @@
 #include "connection.h"
 #include "certificate.h"
 #include "response.h"
+#include "cache.h"
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Globals
@@ -29,9 +30,9 @@ int __fails = 0;
 /* A macro that defines an enhanced assert statement. */
 #define test(exp) do { ++__tests; if (! (exp)) { ++__fails; fprintf (stderr, "Test failed: %s at line: %d\n", #exp, __LINE__); } } while (0)
 
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Helpers
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 /**
  * Get information about the amount of dynamically allocated address space
@@ -194,8 +195,7 @@ send_curl_requests()
 } // send_curl_requests
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Unit tests for functions implemted in connection.c, certificate.c,
-// response.c, and cache.c.
+// Unit tests
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 /** 
@@ -218,6 +218,9 @@ test_convergence ()
 
 } // test_convergence
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Tests for functions in connection.c.
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 int
 test_answer_to_connection_helper (void *cls, struct MHD_Connection *connection,
                                   const char *url, const char *method,
@@ -427,6 +430,9 @@ test_request_completed ()
 
 } // test_request_completed
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Tests for functions in response.c.
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void
 test_generate_signature()
 {
@@ -462,6 +468,7 @@ int ret_val = generate_signature((unsigned char *) json_fingerprint_list, signat
   test(ret_val == 1);
 
 } // test_generate_signature
+
 
 void 
 test_retrieve_response ()
@@ -795,6 +802,9 @@ test_send_response ()
   
 } // test_send_response
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Tests for functions in certificate.c.
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void 
 test_request_certificate ()
 {
@@ -971,25 +981,122 @@ test_verify_fingerprint_format ()
   
 } // test_verify_fingerprint_format
 
-/* Cache will be added later as an extension. */
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Tests for functions in cache.c
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void
+test_is_fingerprint_safe()
+{
+} // test_is_fingerprint_safe
+
+void
+test_is_url_safe()
+{
+} // test_is_url_safe
+
+/* Tests functions is_in_cache and cache_insert. */
 void
 test_is_in_cache ()
 {
+  MYSQL *connection = start_mysql_connection();
+
+  /* Read in (fingerprint, url) pairs for testing.*/
+
+  /* Insert (fingerprint, url) pairs into trusted db. */
+  cache_insert(url, fingerprint, TRUSTED);
+
+  /* Retrieve inserted (fingerprint, url) pairs.*/
+  test(is_in_cache(fingerprint) == 1);
+
+
+  /* Insert (fingerprint, url) pairs into blacklisted db. */
+  cache_insert(url, fingerprint, BLACKLISTED);
+
+  /* Retrieve inserted (fingerprint, url) pairs.*/
+  test(is_in_cache(fingerprint) == 0);
+
+
+  /* Attempt to retrieve nonexistent (fingerprint, url) pairs. */
+  test(is_in_cache(non_fingerprint) == 0);
+  
+
+  close_mysql_connection(conn);
 } // test_verify_certificate
+
+void
+test_is_blacklisted()
+{
+  MYSQL *connection = start_mysql_connection();
+
+  /* Read in (fingerprint, url) pairs for testing.*/
+
+  /* Insert authenticated (fingerprint, url) pairs into trusted db. */
+  cache_insert(url, fingerprint, TRUSTED);
+
+  /* Ensure authenticated (fingerprint, url) pairs are not blacklisted.*/
+  test(is_blacklisted(url) == 0);
+
+
+  /* Insert (fingerprint, url) pairs into blacklisted db. */
+  cache_insert(url, fingerprint, BLACKLISTED);
+
+  /* Ensure inserted (fingerprint, url) pairs are blacklisted.*/
+  test(is_blacklisted(url) == 1);
+
+
+  /* Attempt to retrieve nonexistent (fingerprint, url) pairs. */
+  test(is_in_cache(non_fingerprint) == 0);
+
+  close_mysql_connection(conn);
+} // test_is_blacklisted
 
 void
 test_cache_remove ()
 {
-} // test_cache_remove
+  MYSQL *connection = start_mysql_connection();
 
-void 
-test_cache_insert ()
-{
-} // test_cache_insert
+  /* Read in (fingerprint, url) pairs for testing.*/
+
+  /* Insert (url, fingerprint) pair into trusted cache, remove it, and
+     verify that it does not exist there anymore. */
+  cache_insert(url, fingerprint, TRUSTED);
+  test(cache_remove(fingerprint, TRUSTED) == 1);
+  test(is_in_cache(fingerprint) == 0);
+
+  /* Insert (url, fingerprint) pair into blacklisted cache, remove it, and
+     verify that it does not exist there anymore. */
+  cache_insert(url, fingerprint, BLACKLISTED);
+  test(cache_remove(fingerprint, BLACKLISTED) == 1);
+  test(is_in_cache(fingerprint) == 0);
+
+  /* Attempt to remove a fingerprint that is not present in the cache. */
+  test(is_in_cache(fingerprint) == 0);
+  test(cache_remove(fingerprint, TRUSTED) == -1);
+  test(is_blacklisted(fingerprint) == 0);
+  test(cache_remove(fingerprint, BLACKLISTED) == -1);
+  
+  close_mysql_connection(conn);
+} // test_cache_remove
 
 void 
 test_cache_update ()
 {
+  MYSQL *connection = start_mysql_connection();
+
+  /* Manually insert (url, fingerprint) pairs with an old timestamp,
+     which makes them expired. */
+
+  test(cache_update() == 1);
+  test(is_in_cache(fingerprint) == 0);
+
+  /* Manually insert (url, fingerprint) pairs with a recent timestamp,
+     so that they persist in the cache after cache is updated. */
+    
+  test(cache_update() == 1);
+  test(is_in_cache(fingerprint) == 1);
+}
+
+close_mysql_connection(conn);
 } // test_cache_update
 
 int
@@ -1007,7 +1114,7 @@ main (int argc, char *argv[])
   //test_request_completed ();
   after = mem_allocated();
   //test(before==after);
-  test_generate_signature();
+  //test_generate_signature();
   //test_retrieve_response ();
   //test_send_response ();
   //test_retrieve_post_response ();
