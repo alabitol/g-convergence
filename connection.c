@@ -17,10 +17,10 @@ unsigned int number_active_clients = 0;
 
 /* Response strings for the server to return. */
 const char *busy_page = 
-  "The server is too busy to handle the verification request.";
+  "The server is too busy to handle the verification request.\n";
 
 const char *unsupported_method_page = 
-  "The server received a request with unsupported method.";
+  "The server received a request with an unsupported method.\n";
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -31,12 +31,12 @@ const char *unsupported_method_page =
 static host *
 extract_host (char *url, host *host_to_verify)
 {
-  char *target;
+  //set the url to point to the beggining of the actual website address
+  url = url + 8;
 
   /* Extract the host and port from the url. */
-  strtok(target, "/");
-  host_to_verify->url = strtok(NULL, " ");
-  host_to_verify->port = atol(strtok(NULL, ""));
+  host_to_verify->url = strtok(url, " ");
+  host_to_verify->port = atol(strtok(NULL, " "));
 
   return host_to_verify;
 } // extract_host
@@ -63,7 +63,7 @@ answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
 
   /* The first time the function is called, only headers are processed. */
   if (*con_cls == NULL)
-  {    
+  {
     struct connection_info_struct *con_info;
 
     /* If there are too many clients connected, refuse a new connection. */
@@ -94,7 +94,7 @@ answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
     struct connection_info_struct *con_info = *con_cls;
 
     /* Keep processing the upload data until there is no data to process. */
-    if (0 != *upload_data_size)
+    if (*upload_data_size != 0)
     {
       extract_host(requested_url, host_to_verify);
       retrieve_response(con_info, host_to_verify, upload_data);
@@ -102,38 +102,44 @@ answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
 
       free(host_to_verify);
       free(requested_url);
-      /* Can we send the response right away instead of return MHD_YES? */
+
       return MHD_YES;
     }
     else
-    {
-      /* Retrieve response attributes from con_info to send a response. */
-      return send_response (connection, con_info->answer_string,
-	  con_info->answer_code);
-    }
-  }
-  else if (strcmp (method, "GET") == 0)
-  {
-    struct connection_info_struct *con_info = *con_cls;
-
-    extract_host(requested_url, host_to_verify);
-    /* If the fingerprint is not included in the request, call the method retrieve_response 
-       without a fingerprint from the client */
-    retrieve_response(con_info, host_to_verify, NULL);
-
-    free(host_to_verify);
-    free(requested_url);
-    
-    /* We probably want to call get_response here as well. Hmmm... */
-    return send_response (connection, con_info->answer_string, con_info->answer_code);
+      {
+        /* Retrieve response attributes from con_info to send a response. */
+        return send_response (connection, con_info->answer_string,
+                              con_info->answer_code);
+      }
   }
   else
-  {
-    /* We received a request with unsupported method, so we return the
-     * appropriate error code. 
-     */
-    return send_response (connection, unsupported_method_page, MHD_HTTP_BAD_REQUEST);
-  }
+    {
+      if (strcmp (method, "GET") == 0)
+        {
+          struct connection_info_struct *con_info = *con_cls;
+          
+          extract_host(requested_url, host_to_verify);
+          /* If the fingerprint is not included in the request, call the method retrieve_response 
+             without a fingerprint from the client */
+          retrieve_response(con_info, host_to_verify, NULL);
+          
+          free(host_to_verify);
+          free(requested_url);
+
+          /* We probably want to call get_response here as well. Hmmm... */
+          return send_response (connection, con_info->answer_string, con_info->answer_code);
+        }
+      else
+        { 
+          struct connection_info_struct *con_info = *con_cls;
+
+          /* We received a request with unsupported method, so we return the
+           * appropriate error code. 
+           */
+          con_info->answer_code = MHD_HTTP_BAD_REQUEST;
+          return send_response (connection, unsupported_method_page, con_info->answer_code);
+        }
+    }
 }
 
 /* Clean up after the request completes closing the connection. Taken from the microhttpd tutorial 
@@ -152,6 +158,11 @@ int answer_to_4242_connection(void *cls, struct MHD_Connection *connection,
     size_t *upload_data_size, void **con_cls)
 { return 0; }
 
+/**
+ * This function is called by MHD_start_daemon when a request completes to
+ * insure that memory for datastructures we create to store information 
+ * about the connection are properly freed at the end.
+ */
 void
 request_completed (void *cls, struct MHD_Connection *connection,
     void **con_cls, enum MHD_RequestTerminationCode toe)
@@ -160,13 +171,18 @@ request_completed (void *cls, struct MHD_Connection *connection,
   if (con_info == NULL)
     return;
 
-  if (con_info->connection_type == POST)
+  if ( (con_info->connection_type == POST) || (con_info->connection_type == GET))
     {
       if (con_info->answer_string)
-        free ((char*)con_info->answer_string);
+        {
+          free ((char*)con_info->answer_string);
+        }
     }
-  
-  free (con_info);
+
+  //free memory and set previously used pointers to NULL
+  con_info->answer_string = NULL;
+  free (*con_cls);
   *con_cls = NULL;
-}
+  con_info = NULL;
+} // request_completed
 

@@ -20,7 +20,7 @@ fi
 
 # If $KEYFILE already exists, ask if the user wishes to overwrite
 if [ -e $KEYFILE ]; then
-    echo "Warning: About to delete $KEYFILE. Do you wish to overwrite?"
+    echo "Warning: You are about to overwrite $KEYFILE. Do you wish to proceed?"
     read -n 1 PREF
     if [ $PREF != "y" ] || [ -z $PREF ]; then
        exit
@@ -41,7 +41,8 @@ fi
 
 # If the CERTFILE already exists, prompt user before overwriting
 if [ -e $CERTFILE ]; then
-    echo "Warning: About to delete $CERTFILE. Do you wish to overwrite?"
+    echo "Warning: You are about to overwrite $CERTFILE. Do you wish to \
+proceed?"
     read -n 1 PREF
     if ( $PREF != "y" ) ; then
         if [ -z $PREF ] ; then

@@ -11,6 +11,7 @@
 #include "certificate.h"
 #include "response.h"
 
+
 /* Begins logging of server activity to a log file.  */
 static void
 initiate_logging ()
@@ -81,10 +82,8 @@ int main (int argc, char *argv[])
   int ssl_port = 443;
   char* ip;
   ip = set_default_notary_option("");
-  char *certificate_file;
   certificate_file = set_default_notary_option("./convergence.pem");
-  char *key_file;
-  key_file = set_default_notary_option("./convergence.key");
+  key_filename = set_default_notary_option("./convergence.key");
   char *username;
   username = set_default_notary_option("nobody");
   char *group;
@@ -113,7 +112,7 @@ int main (int argc, char *argv[])
           break;
         case 'k':
           printf("%s\n", optarg);
-          set_notary_option (key_file, optarg);
+          set_notary_option (key_filename, optarg);
           break;
         case 'u':
           set_notary_option (username, optarg);
@@ -158,15 +157,15 @@ int main (int argc, char *argv[])
    * NULL: arguments to the request_completed function
    * MHD_OPTION_END: indicate that there are no more options
    */
-  ssl_daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION, 
-                             ssl_port, 
-			     NULL, 
-			     NULL, 
+  ssl_daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION,
+                             ssl_port,
+			     NULL,
+			     NULL,
 			     &answer_to_SSL_connection,
                              NULL,
-                             MHD_OPTION_NOTIFY_COMPLETED, 
+                             MHD_OPTION_NOTIFY_COMPLETED,
 			     request_completed,
-                             NULL, 
+                             NULL,
                              MHD_OPTION_END
                              );
 

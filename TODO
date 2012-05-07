@@ -8,11 +8,15 @@ Next steps:
 
 notary.c:
 
-* Write unit tests for and answer_to_connection()
-* Determine what C mysql functions we need to use for our cache functions
-* Write unit test for functions in cache.c
-* Write integration tests for the notary system
-* Convert the project to Doxygen documentation format
+* Compute a message digest from fingerprint_list using SHA-1 and sign it with
+  the private key.
+* Fix memory leaks
+* Include an integration test where the notary is running on a different
+  machine
+* Write unit tests for functions in cache.c.
+* Write integration tests for the notary system.
+* Perform fuzz testing- test for receiving random data in requests
+* Convert the project to Doxygen documentation format.
 
 The plan:
 
