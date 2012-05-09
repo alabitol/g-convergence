@@ -86,7 +86,7 @@ int is_fingerprint_safe(char *fingerprint)
 } // is_fingerprint_safe
 
 /* Determines whether given url can be safely inserted.
- * Returns 1 if it is safe. Otherwise returns 0.
+ * @return 1 if it is safe, 0 otherwise.
  */ 
 int is_url_safe(char *url) 
 {
@@ -138,11 +138,12 @@ int is_in_cache (char *url, char *fingerprint)
     }
 } //is_in_cache
 
-/* Checks if we have a record of a url in the blacklist. Returns 1 if 
- * the url is in the blacklist and 0 if it is not. 
- * Returns -1 if error is encountered.
+/* Checks if we have a record of a url in the blacklist. 
+ * @return 1 if the url is in the blacklist, 0 if it is not, 
+ * and -1 if error is encountered.
  */
-int is_blacklisted (char *url)
+int 
+is_blacklisted (char *url)
 {
   MYSQL *conn = start_mysql_connection();
 
