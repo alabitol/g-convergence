@@ -1,14 +1,17 @@
-/******************************************************************************
- * Authors: Tolu Alabi
- *          Zach Butler
- *          Martin Dluhos
- *	    Chase Felker
- *	    Radhika Krishna
- * Created: February 21, 2012
- * Revised: April 11, 2012
- * Description: Handle sending a certificate request to the website and
- *              receiving its response.
- ******************************************************************************/
+/** @file 
+ *
+    @brief  Certificate: Handle sending a certificate request to the website 
+            and receiving its response.
+
+    @author 
+    Tolu Alabi, Zach Butler, Martin Dluhos, Chase Felker, Radhika Krishnar
+
+    @date
+    Created February 21, 2012 <br />
+    Last revised: May 6, 2012 
+
+*/
+
 #include "certificate.h"
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -16,14 +19,16 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 /**
- * Write Function: tell the curl functions where to write the data they
- * receive from a network
+ * @brief Tell the curl functions where to write the data they receive from a network
+ * 
+ * @remark wrfu is shorthand for Write Function.
  *
- * @param ptr a pointer to the location where the data will be stored
- * @param size,
- * @param nmemb, the size of the data written
- * @param stream
- * @return 
+ * @param ptr     a pointer to the location where the data will be stored
+ * @param size    FIXME
+ * @param nmemb   the size of the data written
+ * @param stream  FIXME 
+ * 
+ * @return  FIXME  
  */
 static size_t wrfu (void *ptr,  size_t  size,  size_t  nmemb,  void *stream)
 {
@@ -33,7 +38,8 @@ static size_t wrfu (void *ptr,  size_t  size,  size_t  nmemb,  void *stream)
 }
 
 /**
- * Combines curl cleanup calls. 
+ * @brief Combines curl cleanup calls.
+ * @param curl_handle ___. FIXME
  */
 static void curl_cleanup(CURL* curl_handle)
 {
@@ -42,7 +48,8 @@ static void curl_cleanup(CURL* curl_handle)
 }
 
 /**
- * Changes fingerprint (hex characters) to upper case.
+ * @brief Changes fingerprint (hex characters) to upper case.
+ * @param fingerprint  pointer to the string to be changed into upper case.
  */
 static void to_upper_case(char* fingerprint)
 {
@@ -58,9 +65,12 @@ static void to_upper_case(char* fingerprint)
 }
 
 /**
- * This function converts the PEM certificate to its corresponding SHA1 fingerprint
- * returns pointer to the fingerprint.
- **/
+ * @brief converts the PEM certificate to its corresponding SHA1 fingerprint
+ * 
+ * @param cert          array of certificates to be converted.
+ * @param fingerprints  pointer to the array to which @c get_fingerprint_from_cert writes the SHA1 fingerprints     
+ * @param num_of_certs  size of the @c cert array
+ */
 static void get_fingerprint_from_cert (char** cert, char** fingerprints, int num_of_certs)
 {
   ssize_t len;
@@ -122,7 +132,6 @@ static void get_fingerprint_from_cert (char** cert, char** fingerprints, int num
 
       //end the string with a null character
       fingerprints[i][FPT_LENGTH] = '\0';
-      //printf("Fingerprint: %s\n", fingerprints[i]);
     }
 
   //free all memory
@@ -134,11 +143,16 @@ static void get_fingerprint_from_cert (char** cert, char** fingerprints, int num
 
 
 /** 
- *  Requests the certificates from the website given by the url, and stores
- * the fingerprints of the corresponding certificates in the output
- * parameter fingerprints. Returns the number of fingerprints retrieved.
- **/
-int request_certificate (host *host_to_verify, char** fingerprints)
+ * @brief Requests the certificates from the website given by the url, 
+ * and stores the fingerprints of the corresponding certificates. 
+ *
+ * @param host_to_verify  FIXME  
+ * @param fingerprints    pointer to the array to which @c request_certificate writes the fingerprints from the host. 
+ *
+ * @return  the number of fingerprints retrieved.
+ */
+int 
+request_certificate (host *host_to_verify, char** fingerprints)
 {  
   CURL *curl;
   CURLcode res;
@@ -220,11 +234,13 @@ int request_certificate (host *host_to_verify, char** fingerprints)
 // request_certificate
 
 
-/* Verifies that the fingerprint from the website matches the
- * fingerprint from the user. Returns 1 if fingerprints match. Otherwise,
- * returns 0.
+/** 
+ * @brief Verifies that the fingerprint from the website matches the fingerprint from the user. 
+ *
+ * @return 1 if fingerprints match, 0 otherwise.
  */
-int verify_certificate (const char *fingerprint_from_client, char **fingerprints_from_website, int num_of_website_certs)
+int 
+verify_certificate (const char *fingerprint_from_client, char **fingerprints_from_website, int num_of_website_certs)
 {
   //variable to store the result of the fingerprint comparison
   int result_of_comparison = 0;
@@ -250,7 +266,11 @@ int verify_certificate (const char *fingerprint_from_client, char **fingerprints
 } // verify_certificate
 
 
-/* Verifies that a fingerprint has the correct format. */
+/** 
+ * @brief Verifies that a fingerprint has the correct format. 
+ *
+ * @return 1 if the fingerprint is correctly formatted, 0 otherwise. 
+ */
 int
 verify_fingerprint_format (char *fingerprint)
 {

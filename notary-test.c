@@ -580,8 +580,14 @@ test_verify_certificate ()
   char *c8 = "C2:2A:30:8D:49:DE:49:32:3B:F1:AF:D9:F8:41:79:E6:A8:ED:65:A6";
   char *c9 = "03:47:7F:F5:F6:3B:F5:B6:10:C0:7D:65:9A:7B:A9:12:D3:20:83:68";
 
+  char *lower1 = "ea:9d:ef:d6:33:61:d9:76:71:e1:6c:68:9f:54:a6:59:d7:f1:0e:66";
+  char *lower2 = "45:24:40:53:4f:b4:7c:a6:c6:09:f4:b3:fa:de:6a:dd:21:56:35:ed";
+
   char *c10[1] = {c3};
   char *c11[1] = {c2};
+  char *c12[1] = {c5};
+  char *c13[4] = {c8, c2, c7, c5};
+
   char *no_match[5] = {c5, c6, c7, c8, c9};
   char *last_match[6] = {c5, c6, c7, c8, c9, c1};
   char *second_match[4] = {c5, c1, c6, c7};
@@ -610,7 +616,11 @@ test_verify_certificate ()
   test (result == 0);
 
   //Additional tests: lower case fingerprints 
- 
+  result = verify_certificate(lower1, c12, 1);
+  test (result == 1);
+
+  result = verify_certificate(lower2, c13, 4);
+  test (result == 1);
 } // test_verify_certificate
 
 

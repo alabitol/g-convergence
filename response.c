@@ -1,13 +1,14 @@
-/******************************************************************************
- * Authors: Tolu Alabi
- *          Zach Butler
- *          Martin Dluhos
- *
- * Created: February 21, 2012
- * Revised: March 7, 2012
- * Description: This file contains functions which format the verification
- * response and functions which send the response back to the client.
- ******************************************************************************/
+/** @file
+ 
+  @brief  functions which format the verification response and functions which send the response back to the client.
+ 
+  @author
+  Tolu Alabi, Zach Butler, Martin Dluhos
+ 
+  @date
+  Created: February 21, 2012 <br />
+  Last revised: March 7, 2012
+*/
 
 #include "response.h"
 #include "certificate.h"
@@ -23,7 +24,12 @@
 // Helpers
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-/* Allocate and fill the answer string field in connection struct. */
+/** 
+ @brief allocates and fills the answer string field in connection struct. 
+ 
+ @param connection_info  FIXME
+ @param answer_string    FIXME
+ */
 void
 set_answer_string(struct connection_info_struct* connection_info, char* answer_string)
 {  
@@ -31,10 +37,15 @@ set_answer_string(struct connection_info_struct* connection_info, char* answer_s
   strcpy((char*)connection_info->answer_string, answer_string);
 }
 
-/* Generate a signature of a fingerprint list.
- * @param fingerprint_list list of fingerprints
- * @param signature string to hold the digital signature of fingerprints
- * @return 1 on success, 0 on otherwise
+/** 
+  @brief Generates a signature of a fingerprint list.
+ 
+  @param fingerprint_list  list of fingerprints
+  @param signature         string to hold the digital signature of fingerprints
+  @param signature_size    FIXME
+  @param private_key       FIXME
+
+  @return 1 on success, 0 on otherwise FIXME does RSA_sign return an error if it fails?
  */
 int
 generate_signature(unsigned char *fingerprint_list, unsigned char *signature,
@@ -55,7 +66,14 @@ generate_signature(unsigned char *fingerprint_list, unsigned char *signature,
                   signature_size, private_key);
 } // generate_signature
 
-/* Obtains a response to a POST/GET request.
+/** 
+  @brief Obtains a response to a POST/GET request.
+ 
+  @param coninfo_cls             FIXME
+  @param host_to_verify          FIXME
+  @param fingerprint_from_client FIXME
+
+  @return MHD_YES FIXME (209...??) if __, MHD_NO otherwise. 
  */
 int
 retrieve_response (void *coninfo_cls, host *host_to_verify, const char *fingerprint_from_client)
@@ -147,8 +165,14 @@ retrieve_response (void *coninfo_cls, host *host_to_verify, const char *fingerpr
 }
 
 
-/* Sends response back to the client. This function could be a wrapper for
- * send_page.
+/** 
+ @brief Sends response back to the client. 
+
+ @param connection     X
+ @param response_data  X
+ @param status_code    X
+
+ @return the response code (200, 409, etc.), or MHD_NO if unable to send a response. 
  */
 int
 send_response (struct MHD_Connection *connection, const char *response_data,
