@@ -1,10 +1,15 @@
-/*****************************************************************************
- * Authors: g-coders
+/**
+ * @file
+ * @author g-coders
+ *
+ * @date
  * Created: March 10, 2012
  * Revised: April 12, 2012
- * Description: This file includes unit tests for all functions which are part
+ *
+ * @section DESCRIPTION
+ * This file includes unit tests for all functions which are part
  * of the convergence system.
- ******************************************************************************/
+ */
 
 #include <malloc.h>
 #include <stdio.h>
@@ -35,8 +40,9 @@ int __fails = 0;
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 /**
- * Get information about the amount of dynamically allocated address space
- * in bytes.
+ * @brief Gets information about the amount of dynamically allocated address 
+          space in bytes
+ * @return Returns number of bytes of dynamically allocated space
  */
 static int
 mem_allocated ()
@@ -45,8 +51,27 @@ mem_allocated ()
   return info.uordblks;
 } // mem_allocated
 
+
 /**
- * Combines curl cleanup calls. 
+ * @brief Tells the curl functions where to write the data they
+ *        receive from a network
+ *
+ * @param ptr a pointer to the location where the data will be stored
+ * @param size The size of the data to be stored
+ * @param nmemb The size of the data written
+ * @param stream
+ * @return  
+ */
+static size_t write_function (void *ptr,  size_t  size,  size_t  nmemb,  void *stream)
+{
+  (void) stream;
+  (void) ptr;
+  return size * nmemb;
+} // write_function
+
+/**
+ * @brief Combines curl cleanup calls 
+ * @param curl_handle
  */
 static void curl_cleanup(CURL* curl_handle)
 {
@@ -55,7 +80,10 @@ static void curl_cleanup(CURL* curl_handle)
 } // curl_cleanup
 
 /**
- *Helper to create a post request
+ * @brief Helper to create a post request
+ * @param url The url we want to connect to
+ * @param fingerprint The fingerprint we want to verify
+ * @return 
  */
 static CURL* create_post_request(char* url, char* fingerprint)
 {
@@ -79,7 +107,9 @@ static CURL* create_post_request(char* url, char* fingerprint)
 } // create_post_request
 
 /**
- * Helper to create a GET request
+ * @brief Helper to create a GET request
+ * @param url The url we want to connect to
+ * @return 
  */
 static CURL* create_get_request(char* url)
 {
@@ -102,7 +132,9 @@ static CURL* create_get_request(char* url)
 } // create_get_request
 
 /**
- * Helper to create a CUSTOM request
+ * @brief Helper to create a CUSTOM request
+ * @param url The url we want to connect to
+ * @return 
  */
 static CURL* create_custom_request(char* url)
 {
@@ -124,7 +156,9 @@ static CURL* create_custom_request(char* url)
   return curl_handle;
 } // create_custom_request
 
-/* Function that sends HTTP requests to a running MHD_Daemon. */
+/**
+ * @brief Sends HTTP requests to a running MHD_Daemon
+ */
 void
 send_curl_requests()
 {
@@ -180,8 +214,8 @@ send_curl_requests()
 // Unit tests
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-/** 
- * Test the entire system. 
+/**
+ * @brief Tests the entire system 
  */
 void
 test_convergence ()
@@ -203,6 +237,21 @@ test_convergence ()
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Tests for functions in connection.c.
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+/**
+ * @brief Tests the functions in connection.c
+ *
+ * @param cls
+ * @param connection
+ * @param url
+ * @param method
+ * @param version
+ * @param upload_data
+ * @param upload_data_size
+ * @param con_cls
+ *
+ * @return Returns MHD_YES if a connection was successfully created,
+ *         and returns MHD_NO if it was not.
+ */
 int
 test_answer_to_connection_helper (void *cls, struct MHD_Connection *connection,
                                   const char *url, const char *method,
@@ -270,6 +319,9 @@ test_answer_to_connection_helper (void *cls, struct MHD_Connection *connection,
   return MHD_YES;
 }
 
+/**
+ * @brief Tests the function answer_to_SSL_connection
+ */
 void 
 test_answer_to_connection ()
 {
@@ -305,6 +357,21 @@ test_answer_to_connection ()
 } // test_answer_to_connection
 
 
+/**
+ * @brief Tests the function request_completed_helper
+ *
+ * @param cls
+ * @param connection
+ * @param url
+ * @param method
+ * @param version
+ * @param upload_data
+ * @param upload_data_size
+ * @param con_cls
+ *
+ * @return Returns MHD_YES if a connection was successfully created,
+ *         and returns MHD_NO if it was not.
+ */
 int
 test_request_completed_helper(void *cls, struct MHD_Connection *connection,
                               const char *url, const char *method,
@@ -375,7 +442,9 @@ test_request_completed_helper(void *cls, struct MHD_Connection *connection,
   return MHD_YES;
 }
 
-
+/**
+ * @brief Tests the function request_completed
+ */
 void 
 test_request_completed ()
 { 
@@ -415,6 +484,9 @@ test_request_completed ()
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Tests for functions in response.c.
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+/**
+ * @brief Test the function generate_signature
+ */
 void
 test_generate_signature()
 {
@@ -451,7 +523,9 @@ int ret_val = generate_signature((unsigned char *) json_fingerprint_list, signat
 
 } // test_generate_signature
 
-
+/**
+ * @brief Tests the function retrieve_response
+ */
 void 
 test_retrieve_response ()
 {
@@ -565,6 +639,9 @@ test_retrieve_response ()
   fclose(invalid_fingerprints);
 } // test_retrieve_post_response
 
+/**
+ * @brief Tests the function verify_certificate
+ */
 void
 test_verify_certificate ()
 {
@@ -623,7 +700,21 @@ test_verify_certificate ()
   test (result == 1);
 } // test_verify_certificate
 
-
+/**
+ * @brief Tests the helper functions to send_response
+ *
+ * @param cls
+ * @param connection
+ * @param url
+ * @param method
+ * @param version
+ * @param upload_data
+ * @param upload_data_size
+ * @param con_cls
+ *
+ * @return Returns MHD_YES if a connection was successfully created,
+ *         and returns MHD_NO if it was not.
+ */
 int
 test_send_response_helper (void *cls, struct MHD_Connection *connection,
     const char *url, const char *method,
@@ -719,6 +810,9 @@ test_send_response_helper (void *cls, struct MHD_Connection *connection,
   return MHD_YES;
 } // test_send_response_helper
 
+/**
+ * @brief Tests the function send_response
+ */
 void 
 test_send_response ()
 {
@@ -797,6 +891,9 @@ test_send_response ()
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Tests for functions in certificate.c.
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+/**
+ * @brief Tests the function request_certificate
+ */
 void 
 test_request_certificate ()
 {
@@ -899,6 +996,9 @@ test_request_certificate ()
 } // test_request_certificate
 
 
+/**
+ * @brief Tests the function verify_fingerprint_format
+ */
 void
 test_verify_fingerprint_format ()
 {
@@ -977,6 +1077,17 @@ test_verify_fingerprint_format ()
 // Tests for functions in cache.c
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+/**
+ * @brief Tests the function is_fingerprint_safe
+ */ 
+void
+test_is_fingerprint_safe()
+{
+} // test_is_fingerprint_safe
+
+/**
+ * @brief Tests the function is_url_safe
+ */
 void
 test_is_url_safe()
 {
@@ -1007,7 +1118,10 @@ test_is_url_safe()
     } // while
 } // test_is_url_safe
 
-/* Tests functions is_in_cache and cache_insert. */
+
+/**
+ * @brief Tests the functions is_in_cache and cache_insert.
+ */
 void
 test_is_in_cache ()
 {
@@ -1052,12 +1166,23 @@ test_is_in_cache ()
       test(is_in_cache(url, fingerprint) == 0);
     } // while
   
-
   if (invalid_fpts == NULL)
     {
       fprintf(stderr, "Could not open invalid_fpts.txt.\n");
       exit(1);
     }
+
+  close_mysql_connection(conn);
+} // test_verify_certificate
+
+/**
+ * @brief Tests the function is_blacklisted
+ */
+void
+test_is_blacklisted()
+{
+  MYSQL *connection = start_mysql_connection();
+
 
   /* Read in (fingerprint, url) pairs for testing.*/
   while (fgets (input_line, size, invalid_fpts) != NULL)
@@ -1078,6 +1203,9 @@ test_is_in_cache ()
   close_mysql_connection(connection);
 } // test_verify_certificate
 
+/**
+ * @brief Tests the function cache_remove
+ */
 void
 test_cache_remove ()
 {
@@ -1129,6 +1257,9 @@ test_cache_remove ()
   close_mysql_connection(connection);
 } // test_cache_remove
 
+/**
+ * @brief Tests the function cache_update
+ */
 void 
 test_cache_update_url ()
 {
@@ -1172,6 +1303,12 @@ test_cache_update_url ()
   close_mysql_connection(connection);
 } // test_cache_update_url
 
+/**
+ * @brief Runs the tests and prints the results
+ * @param argc The number of command-line arguments
+ * @param argv The command-line arguments
+ * @return Returns 0
+ */
 int
 main (int argc, char *argv[])
   {

@@ -1,10 +1,13 @@
-/*****************************************************************************
- * Authors: g-coders
+/**
+ *@file
+ *@author g-coders
+ *@date
  * Created: February 27, 2012
  * Revised: April 15, 2012
- * Description: This program starts the notary server which listens for
+ *@section DESCRIPTION
+ * This program starts the notary server which listens for
  * verification requests from clients.
- ******************************************************************************/
+ */
 
 #include "notary.h"
 #include "connection.h"
@@ -12,15 +15,19 @@
 #include "response.h"
 
 
-/* Begins logging of server activity to a log file.  */
+/**
+ * @brief Begins logging of server activity to a log file. 
+ */
 static void
 initiate_logging ()
 {
   
-} // initiate_logging
+}// initiate_logging
 
-/* Print a helpful usage message if the user calls notary incorrectly or
- * if she invokes it with --help flag. */
+/**
+ * @brief Print a helpful usage message if the user calls notary incorrectly or
+ *        if she invokes it with --help flag. 
+ */
 static void 
 print_usage ()
 {
@@ -38,10 +45,14 @@ print_usage ()
 	   -d               Run in debug mode.\n \
 	   -h               Print this help message.\n");
 
-} // print_help
+} // print_usage
 
 
-/*Set the default notary option */
+/**
+ * @brief Sets the default notary option 
+ * @param default_string the default notary option
+ * @return a string containing the default notary option
+ */
 static char*
 set_default_notary_option (char* default_string)
 {
@@ -50,10 +61,14 @@ set_default_notary_option (char* default_string)
 
   strcpy(option, default_string);
   return option;
-}
+}//set_default_notary_option
 
 
-/* Set the appropriate notary option. */
+/**
+ * @brief Sets the appropriate notary option.
+ * @param option The notary option
+ * @param argument The argument for the notary option
+ */
 static void
 set_notary_option (char *option, char* argument)
 {
@@ -70,7 +85,7 @@ set_notary_option (char *option, char* argument)
     }
 
   strcpy(option, argument);
-}
+}//set_notary_option
 
 /* Set the keyfile and certfile */
 static void
@@ -88,6 +103,13 @@ set_key_and_cert_files()
   mycert[strlen(mycert)-2] = '\0';
   certfile = mycert;
 }
+
+/**
+ * @brief Starts the daemon and runs the notary
+ * @param argc The number of command-line arguments
+ * @param argv The command-line arguments
+ * @return Returns 0 if the notary runs correctly and 1 if it doesn't.
+ */
 
 int main (int argc, char *argv[])
 {
