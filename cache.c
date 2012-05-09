@@ -7,9 +7,6 @@
  ******************************************************************************/
 #include "cache.h"
 
-/* The time we want to keep records in the TRUSTED cache. */
-#define CACHE_TIME 1; //FIXME one day
-
 /* Structure of table
  *   trusted
  *   +--------------------------------------------------------------+
@@ -73,16 +70,14 @@ close_mysql_connection(MYSQL *connection)
 {
   mysql_close(connection);
 } // close_mysql_connection
-
+  
 /* Determines whether given fingerprint can be safely inserted.
  * @return 1 if it is safe, 0 otherwise
  */
-int is_fingerprint_safe(char *fingerprint)
+int
+is_fingerprint_safe(char *fingerprint)
 {
-  if (verify_fingerprint_format(fingerprint))
-    return 1;
-  else
-    return 0;
+  return verify_fingerprint_format(fingerprint);
 } // is_fingerprint_safe
 
 /* Determines whether given url can be safely inserted.
@@ -90,6 +85,7 @@ int is_fingerprint_safe(char *fingerprint)
  */ 
 int is_url_safe(char *url) 
 {
+  return 0;
   /* STUB */
 } // is_url_safe
 
@@ -98,17 +94,17 @@ int is_url_safe(char *url)
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 /**
- * Checks if a particular fingerprint is in the cache already, 
- * either as the fingerprint of a trusted url or a blacklisted url. 
- * Returns 1 if the cache has a fingerprint for the url, 
- * otherwise returns 0. Returns -1 if error is encountered.
+ * Checks if a particular fingerprint is in the cache already, either as
+ * the fingerprint of a trusted url or a blacklisted url.  Returns
+ * CACHE_TRUSTED if the cache has a fingerprint for the url,
+ * CACHE_BLACKLIST if the blacklist has the fingerprint, 0 if the url is
+ * not in either cache, and -1 if an error is encountered.
  */
 int is_in_cache (char *url, char *fingerprint)
 {
   MYSQL_RES *result;
-  MYSQL_ROW row;
   MYSQL *conn;
-  int num_fields;
+  int num_rows;
   int blacklisted;
   char *query_string = NULL;
 
@@ -117,24 +113,26 @@ int is_in_cache (char *url, char *fingerprint)
   blacklisted = is_blacklisted(url);
   if (blacklisted)
     {
-      return 1;
+      return CACHE_BLACKLIST;
     }
 
-  asprintf (&query_string, "SELECT url FROM trusted WHERE fingerprint=%s;", fingerprint);
+  asprintf (&query_string, 
+            "SELECT url FROM trusted WHERE fingerprint=%s;",
+            fingerprint);
 
   mysql_query(conn, query_string);
   result = mysql_store_result(conn);
-  num_fields = mysql_num_fields(result);
+  num_rows = mysql_num_rows(result);
 
   close_mysql_connection(conn);
   
-  if (num_fields)
+  if (num_rows)
     {
-      return 1;
+      return CACHE_TRUSTED;
     }
   else 
     {
-      return 0;
+      return CACHE_BLACKLIST;
     }
 } //is_in_cache
 
@@ -147,18 +145,18 @@ int is_blacklisted (char *url)
   MYSQL *conn = start_mysql_connection();
 
   MYSQL_RES *result;
-  unsigned int num_fields;
+  unsigned int num_elements;
 
   char *query_string = NULL;
   asprintf (&query_string, "SELECT url FROM blacklisted WHERE url=%s;", url);
 
   mysql_query(conn, query_string);
   result = mysql_store_result(conn);
-  num_fields = mysql_num_fields(result);
+  num_elements = mysql_num_rows(result);
 
   close_mysql_connection(conn);
    
-  return num_fields;
+  return num_elements;
 } //is_blacklisted
 
 /* Inserts a certificate fingerprint into the cache.
@@ -166,7 +164,7 @@ int is_blacklisted (char *url)
  * otherwise, inserts into blacklist cache.
  * Returns 1 if insert is successful. Otherwise, returns 0.
  */ 
-int cache_insert (char* url, char* fingerprint, bool db)
+int cache_insert (char* url, char* fingerprint, int db)
 {
   char *query_string = NULL;
   char *db_name = NULL;
@@ -174,7 +172,7 @@ int cache_insert (char* url, char* fingerprint, bool db)
   int return_val;
   MYSQL *conn = start_mysql_connection();
  
-  if (db == TRUSTED)
+  if (db == CACHE_TRUSTED)
     {
       asprintf(&db_name, "trusted");
     }
@@ -184,9 +182,11 @@ int cache_insert (char* url, char* fingerprint, bool db)
     }
 
   /* Compute timestamp. */
+  /* Do we want time inserted or time at which it will expire? */
 
   /* Construct the query string. */
-  asprintf(&query_string, "INSERT INTO %s VALUES (%s, %s, %s)", db_name, url, fingerprint, timestamp);
+  asprintf(&query_string, "INSERT INTO %s VALUES (%s, %s, %s)",
+           db_name, url, fingerprint, timestamp);
 
   return_val = mysql_query(conn, query_string);
   close_mysql_connection(conn);
@@ -200,14 +200,14 @@ int cache_insert (char* url, char* fingerprint, bool db)
  * Returns 1 if removal is successful, 0 if fingerprint cannot be removed,
  * and -1 if the fingerprint does not exist in the database. 
  */
-int cache_remove (char* fingerprint, bool db)
+int cache_remove (char* fingerprint, int db)
 {
   int return_val;
   char *db_name;
   char *query_string = NULL;
   MYSQL *conn = start_mysql_connection();
  
-  if (db == TRUSTED)
+  if (db == CACHE_TRUSTED)
     {
       asprintf(&db_name, "trusted");
     }
@@ -216,7 +216,8 @@ int cache_remove (char* fingerprint, bool db)
       asprintf(&db_name, "blacklisted");
     }
 
-  asprintf(&query_string, "DELETE FROM %s WHERE fingerprint=%s;", db_name, fingerprint);
+  asprintf(&query_string, "DELETE FROM %s WHERE fingerprint=%s;",
+           db_name, fingerprint);
   return_val = mysql_query(conn, query_string); 
   close_mysql_connection(conn);
 
@@ -226,18 +227,16 @@ int cache_remove (char* fingerprint, bool db)
 /* Removes cache entries that have expired from trusted cache. 
  * @return 1 on success, 0 on failure
  */
-int cache_update ()
+int cache_update_url (char *url, char **fingerprints)
 {
   MYSQL *conn = start_mysql_connection();
-  int return_val;
+  int return_val1, return_value2;
   
-  char *query_string = NULL;
-  asprintf(&query_string, "SELECT * FROM trusted WHERE timestamp < ");
+  return_value1 =
+    mysql_query(conn, "DELETE FROM trusted(fingerprint)");
+  return_val2 = mysql_query(conn, "SELECT * FROM trusted WHERE timestamp < ");
 
-  return_val = mysql_query(conn, "SELECT * FROM __ WHERE timestamp >__");
-  return_val = 
-    mysql_query(conn, "DELETE FROM trusted(fingerprint)"); 
   close_mysql_connection(conn);
 
-  return !return_val;
+  return !(return_value1 || return_value2)
 } //cache_update

@@ -2,13 +2,28 @@
 # Default locations for private key and self-signed certificate
 
 KEYFILE="./convergence.key"
+REQFILE="./mycert.csr"
 CERTFILE="./convergence.pem"
+NUMDAYS=365
+SKIP_KEY_GENERATION=0
+SKIP_CERT_GENERATION=0
 
 # Check if openssl is installed, and figure out the absolute path of openssl
 OPENSSL=$(command -v openssl)
 if [ -z "$OPENSSL" ]; then
     echo "Openssl is not installed. Please install openssl before running the notary."
     exit
+fi
+
+# Check if notary config file exists already
+if [ -e "./notary.config" ]; then
+    echo "File ./notary.config already exists. Do you wish to overwrite? \
+(script will exit if not)"
+    read PREF
+    if [ "$PREF" != "y" ]; then
+        echo "Aborting..."
+        exit
+    fi
 fi
 
 # Prompt user for private key name
@@ -20,18 +35,26 @@ fi
 
 # If $KEYFILE already exists, ask if the user wishes to overwrite
 if [ -e $KEYFILE ]; then
-    echo "Warning: You are about to overwrite $KEYFILE. Do you wish to proceed?"
+    echo "$KEYFILE already exists. Do you wish to use the existing file \
+ as your private key?"
     read -n 1 PREF
-    if [ $PREF != "y" ] || [ -z $PREF ]; then
-       exit
+    if [ "$PREF" == "y" ]; then
+        SKIP_KEY_GENERATION=1
+    else 
+        echo "Do you wish to overwrite $KEYFILE to use as your key file?"
+        read -n 1 PREF
+        if [ "$PREF" != "y" ]; then
+            echo "Aborting..."
+            exit
+        fi
     fi
 fi
 
-# Generate private key
-$OPENSSL genrsa -out $KEYFILE 2048
-echo "
+# Generate private key if one doesn't already exist
+if [ $SKIP_KEY_GENERATION == 0 ]; then
+    $OPENSSL genrsa -out $KEYFILE 2048
+fi
 
-"
 # Prompt user for certificate name
 echo "Insert desired certificate name (defaults to ./convergence.pem): "
 read PROMPT
@@ -40,33 +63,73 @@ if [ -n "$PROMPT" ]; then
 fi
 
 # If the CERTFILE already exists, prompt user before overwriting
-if [ -e $CERTFILE ]; then
-    echo "Warning: You are about to overwrite $CERTFILE. Do you wish to \
-proceed?"
+if [ -e $CERTFILE ] && [ $SKIP_KEY_GENERATION == 1 ]; then
+    echo "$CERTFILE already exists. Do you wish to use this file as your \
+certificate?"
     read -n 1 PREF
-    if ( $PREF != "y" ) ; then
-        if [ -z $PREF ] ; then
+    if [ "$PREF" == "y" ] ; then
+        SKIP_CERT_GENERATION=1
+    else
+        echo "Do you wish to overwrite $CERTFILE to use as your certificate file? (script will terminate if not)"
+        read -n 1 PREF
+        if [ "$PREF" != "y" ]; then
+            echo "Aborting..."
             exit
         fi
+    fi
+elif [ -e $CERTFILE ]; then
+    echo "$CERTFILE already exists. Since you are generating your own key, \
+you must generate a new certificate. Do you wisht to overwrite the current \
+$CERTFILE? (script will terminate if not)"
+    read -n 1 PREF
+    if [ "$PREF" != "y" ]; then
+        echo "Aborting..."
+        exit
     fi
 fi
 
 # If intermediate file mycert.csr exists, prompt user before overwriting
 if [ -e "./mycert.csr" ]; then
-    echo "Warning: About to delete intermediate file mycert.csr. Do you wish to overwrite?"
+    echo "Warning: About to overwrite intermediate file mycert.csr. Do \
+ you wish to proceed?"
     read -n 1 PREF
-    if [ $PREF != "y" || -z $PREF ]; then
-       exit
+    if [ "$PREF" != "y" ]; then
+        echo "Enter name of intermediate certificate request file to be used \
+(this file will be deleted at the end of the script)"
+        read PROMPT
+        if [ -n $PROMPT ]; then
+            REQFILE=$PROMPT
+        else 
+            echo "No file name given. Aborting..."
+            exit
+        fi
     fi
 fi
 
 # Create certificate request file
-$OPENSSL req -new -key $KEYFILE -out ./mycert.csr
+if [ $SKIP_CERT_GENERATION == 0 ]; then
+    $OPENSSL req -new -key $KEYFILE -out ./mycert.csr
+    
+    # How long shall the certificate stay valid?
+    echo "Enter the duration of time (in days) for which you want this \
+certificate to be valid (Defaults to 365): "
+    read PROMPT
+    if [ -n $PROMPT ]; then
+        NUMDAYS=$PROMPT
+    fi
+    # Sign our certificate request to make a real certificate
+    $OPENSSL x509 -req -days $NUMDAYS -in $REQFILE -signkey $KEYFILE -out $CERTFILE
 
-# Sign our certificate request to make a real certificate
-$OPENSSL x509 -req -days 365 -in mycert.csr -signkey $KEYFILE -out $CERTFILE
+    # Confirm successful key/certificate generation
+    echo "Successful generation of key in $KEYFILE and certificate in $CERTFILE. Certificate valid for $NUMDAYS days from present date."
 
-# Confirm successful key/certificate generation
-echo "Successful generation of key in $KEYFILE and certificate in $CERTFILE. Certificate valid for one year from present date."
-# Delete intermediate files
-rm mycert.csr
+    # Delete intermediate files
+    rm mycert.csr
+fi
+
+# Generate config file
+echo "$KEYFILE
+$CERTFILE" > ./notary.config
+
+# Tell user we are done
+echo "Configuration complete."

@@ -72,6 +72,23 @@ set_notary_option (char *option, char* argument)
   strcpy(option, argument);
 }
 
+/* Set the keyfile and certfile */
+static void
+set_key_and_cert_files() 
+{
+  char mykey[128];
+  char mycert[128];
+  FILE *fp = fopen("./notary.config","r");
+
+  fgets(mykey, 129, fp);
+  mykey[strlen(mykey)-2] = '\0';
+  keyfile = mykey;
+ 
+  fgets(mycert, 129, fp);
+  mycert[strlen(mycert)-2] = '\0';
+  certfile = mycert;
+}
+
 int main (int argc, char *argv[])
 {
   int i;
@@ -137,6 +154,8 @@ int main (int argc, char *argv[])
   /* Find a logging c library. */
   initiate_logging ();
 
+  /* Set keyfile and certfile */
+  set_key_and_cert_files();
   /* Make sure we can start the daemon in the background. */
 
   /* Start the MHD daemons to listen for client requests. 

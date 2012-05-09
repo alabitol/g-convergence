@@ -7,12 +7,13 @@ MHDFLAG = -lmicrohttpd
 SSLFLAG = -lcrypto
 CFLAGS= -Wall -ggdb3
 OBJS= connection.o certificate.o response.o cache.o
+CACHEFLAGS= -rdynamic -L/usr/lib/mysql -lmysqlclient
 
 notary: notary.c ${OBJS}
 	${CC} -o $@ $^ ${CURLFLAG} ${MHDFLAG} ${SSLFLAG}
 
 test: notary-test.c ${OBJS}
-	${CC} -o $@ $^ ${CURLFLAG} ${MHDFLAG} ${SSLFLAG} ${CFLAGS}
+	${CC} -o $@ $^ ${CURLFLAG} ${MHDFLAG} ${SSLFLAG} ${CFLAGS} ${CACHEFLAGS} 
 
 connection: connection.c response.c
 	${CC} -c $^
@@ -24,7 +25,7 @@ response: response.c certificate.c
 	${CC} -c $^
 
 cache: cache.c
-	${CC} -c $^
+	${CC} -c $^ 
 
 clean:
 	/bin/rm -f ${OBJS} \#*# .#*
