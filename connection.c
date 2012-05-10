@@ -181,6 +181,7 @@ request_completed (void *cls, struct MHD_Connection *connection,
 
   //free memory and set previously used pointers to NULL
   con_info->answer_string = NULL;
+
   free (*con_cls);
   *con_cls = NULL;
   con_info = NULL;

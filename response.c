@@ -49,7 +49,7 @@ retrieve_response (void *coninfo_cls, host *host_to_verify, const char *fingerpr
   //get the fingerprints
   start_time = time(NULL);
   num_of_certs = request_certificate(host_to_verify, fingerprints_from_website);
-  
+
   if (num_of_certs == 0)
     {
       /* The notary could not obtain the certificate from the website
@@ -116,8 +116,8 @@ send_response (struct MHD_Connection *connection, const char *response_data,
   int return_value;
   struct MHD_Response *response;
 
-  response = MHD_create_response_from_data (strlen(response_data), (void*) response_data,
-                                            MHD_NO, MHD_NO);
+  response = MHD_create_response_from_data (strlen(response_data), (void*) response_data, MHD_NO, MHD_NO);
+
   if (response == NULL)
   {
     return MHD_NO;

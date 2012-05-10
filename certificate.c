@@ -189,10 +189,9 @@ int request_certificate (host *host_to_verify, char** fingerprints)
 
           //retrieve the fingerprints from these certificates
           get_fingerprint_from_cert(certificates, fingerprints, number_of_certs);
-          //Cleanup Functions
-          //Note that curl_easy_cleanup(curl) is not called here in case another
-          //connection is being made
-          curl_global_cleanup();
+
+          //Cleanup curl
+          curl_cleanup(curl);
 
           return number_of_certs;
         }
@@ -246,6 +245,7 @@ int verify_certificate (const char *fingerprint_from_client, char **fingerprints
         }
     }
 
+  free(client_fingerprint);
   return result_of_comparison;
 } // verify_certificate
 

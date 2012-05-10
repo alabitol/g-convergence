@@ -12,7 +12,7 @@ notary: notary.c ${OBJS}
 	${CC} -o $@ $^ ${CURLFLAG} ${MHDFLAG} ${SSLFLAG}
 
 test: notary-test.c ${OBJS}
-	${CC} -o $@ $^ ${CURLFLAG} ${MHDFLAG} ${SSLFLAG} ${CFLAGS}
+	${CC} -g -o $@ $^ ${CURLFLAG} ${MHDFLAG} ${SSLFLAG} ${CFLAGS}
 
 connection: connection.c response.c
 	${CC} -c $^

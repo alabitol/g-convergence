@@ -12,6 +12,8 @@
 #include "connection.h"
 #include "certificate.h"
 #include "response.h"
+//header for detecting memory leaks
+#include <mcheck.h>
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Globals
@@ -27,7 +29,8 @@ int __fails = 0;
 #define CUSTOM 2
 
 /* A macro that defines an enhanced assert statement. */
-#define test(exp) do { ++__tests; if (! (exp)) { ++__fails; fprintf (stderr, "Test failed: %s at line: %d\n", #exp, __LINE__); } } while (0)
+#define test(exp) do { ++__tests; if (! (exp)) { ++__fails; fprintf (stderr, "Test failed: %s at line: %d\n", #exp, __LINE__); } \
+    {printf("Tests: %d  Failed: %d\n", __tests, __fails); } } while (0)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Helpers
@@ -92,6 +95,8 @@ static CURL* create_post_request(char* url, char* fingerprint)
   curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, fingerprint);
   curl_easy_setopt(curl_handle, CURLOPT_HEADER, 1L);
       
+  //free used memory
+  free(host);
   return curl_handle;
 }
 
@@ -115,6 +120,7 @@ static CURL* create_get_request(char* url)
   curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1L);
   curl_easy_setopt(curl_handle, CURLOPT_HEADER, 1L);
 
+  free(host);
   return curl_handle;
 }
 
@@ -138,6 +144,7 @@ static CURL* create_custom_request(char* url)
   curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, "CUSTOM");
   curl_easy_setopt(curl_handle, CURLOPT_HEADER, 1L);
       
+  free(host);
   return curl_handle;
 }
 
@@ -194,7 +201,7 @@ send_curl_requests()
 } // send_curl_requests
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Unit tests for functions implemted in connection.c, certificate.c,
+// Unit tests for functions implemented in connection.c, certificate.c,
 // response.c, and cache.c.
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -252,6 +259,7 @@ test_answer_to_connection_helper (void *cls, struct MHD_Connection *connection,
 
   if(*upload_data_size != 0)
     {
+      free(*con_cls);
       *con_cls = NULL;
       
       //first time through answer_to_ssl_connection
@@ -282,6 +290,7 @@ test_answer_to_connection_helper (void *cls, struct MHD_Connection *connection,
       return MHD_YES;
     }
   
+  free(*con_cls);
   return MHD_YES;
 }
 
@@ -372,12 +381,15 @@ test_request_completed_helper(void *cls, struct MHD_Connection *connection,
 }\n";
       struct connection_info_struct *con_info = *con_cls;
       
-      con_info->answer_string = malloc(sizeof(char) * strlen(json_fingerprint_list) + 1);
-      strcpy((char*)con_info->answer_string, json_fingerprint_list);
+      if(strcmp(method, "CUSTOM") != 0)
+        {
+          con_info->answer_string = malloc(sizeof(char) * strlen(json_fingerprint_list) + 1);
+          strcpy((char*)con_info->answer_string, json_fingerprint_list);
+        }
+
       con_info->answer_code = MHD_HTTP_OK;
 
       ret_val = send_response(connection, json_fingerprint_list, con_info->answer_code);
-      
       request_completed(cls, connection, con_cls, con_info->answer_code);
 
       //check if request_completed did its job
@@ -486,8 +498,11 @@ test_retrieve_response ()
       host_to_verify->url = url;
       
       /* Call retrieve_response and check its return value. */
-      result = retrieve_response (coninfo_cls, host_to_verify, fingerprint);
-    
+      result = retrieve_response (coninfo_cls, host_to_verify, fingerprint);    
+
+      //free used memory
+      free((void*)coninfo_cls->answer_string);
+
       test(result == MHD_YES);
       test(coninfo_cls->answer_code == MHD_HTTP_OK);
     }//while
@@ -510,6 +525,7 @@ test_retrieve_response ()
 
       /* Check if result is MHD_NO */
       test(result == MHD_NO);
+      test(coninfo_cls->answer_code == MHD_HTTP_SERVICE_UNAVAILABLE);
     }
       
   /* If fingerprint_from_client does not match any fingerprint from website, expect MHD_YES as the return value and answer_code as MHD_HTTP_CONFLICT. */
@@ -527,6 +543,8 @@ test_retrieve_response ()
  
       /* Call retrieve_response and check its return value. */
       result = retrieve_response(coninfo_cls, host_to_verify, fingerprint);
+      //free used memory
+      free((void*)coninfo_cls->answer_string);
 
       test(result == MHD_YES);
       test(coninfo_cls->answer_code == MHD_HTTP_CONFLICT);
@@ -538,6 +556,8 @@ test_retrieve_response ()
   fclose(valid_urls);
   fclose(invalid_urls);
   fclose(invalid_fingerprints);
+  free(host_to_verify);
+  free(coninfo_cls);
 } // test_retrieve_post_response
 
 void
@@ -681,6 +701,8 @@ test_send_response_helper (void *cls, struct MHD_Connection *connection,
           break;
         }
     }
+
+  free(*con_cls);
   return MHD_YES;
 } // test_send_response_helper
 
@@ -789,7 +811,7 @@ test_request_certificate ()
     }
 
   //allocate space for the fingerprints
-  int i,j;
+  int i;
   for(i=0; i<MAX_NO_OF_CERTS; i++)
     retrieved_fingerprints[i] = calloc(FPT_LENGTH * sizeof(char), 1);
 
@@ -807,14 +829,9 @@ test_request_certificate ()
 
       //then get the fingerprint
       correct_fingerprint = strtok(NULL, "' '");
-      printf("Its: %s\n", correct_fingerprint);
 
       //Get the fingerprint by calling request_certificate
       number_of_certs = request_certificate(host_to_verify, retrieved_fingerprints);
-      printf("%d certs found\n", number_of_certs);
-
-      for(i=0; i<number_of_certs; i++)
-        printf("%s\n", retrieved_fingerprints[i]);
 
       test (verify_certificate(correct_fingerprint, retrieved_fingerprints, number_of_certs) == 1);
 
@@ -854,6 +871,7 @@ test_request_certificate ()
   fclose (valids);
   fclose (invalids);
   free(host_to_verify);
+  free(string_read);
 
   //free memory used for fingerprints
   for(i=0; i<MAX_NO_OF_CERTS; i++)
@@ -933,6 +951,9 @@ test_verify_fingerprint_format ()
       invalid_fpt[test_array[i]->pos] = temp;
     }
   
+  //free used memory
+  free(valid_fpt);
+  free(invalid_fpt);
 } // test_verify_fingerprint_format
 
 /* Cache will be added later as an extension. */
@@ -956,25 +977,39 @@ test_cache_update ()
 {
 } // test_cache_update
 
+void
+test_curl ()
+{ 
+  CURL* curl_handle;
+
+  /* Initialize curl. */
+  curl_global_init(CURL_GLOBAL_ALL);
+  curl_handle = curl_easy_init();
+
+  curl_easy_setopt(curl_handle, CURLOPT_URL, "http://www.tolu.com");
+  curl_easy_setopt(curl_handle, CURLOPT_POST, 1L);
+  curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, "FDHDRHFZHFDHDZFHDFHDFZHDFHDZHDG");
+
+  curl_easy_cleanup(curl_handle);
+  curl_global_cleanup();
+}
+
+
 int
 main (int argc, char *argv[])
 {
   /* Variables to keep track of allocated memory. */
   int before, after;
 
+  mtrace();
+  before = mem_allocated();
   /* Test all functions here. */
   //test_convergence ();
   //test_answer_to_connection();
 
   /* Check if the system is leaking memory. */
-  before = mem_allocated();
   test_request_completed ();
-  after = mem_allocated();
-  printf ("BEFORE: %d\nAFTER: %d", before, after);
-  test(before==after);
   //test_retrieve_response ();
-  //test_send_response ();
-  //test_retrieve_post_response ();
   //test_send_response ();
   //test_request_certificate ();
   //test_verify_fingerprint_format();
@@ -982,7 +1017,12 @@ main (int argc, char *argv[])
   //test_cache_remove ();
   //test_cache_insert ();
   //test_cache_update ();
-  // test_verify_certificate();
+  //test_verify_certificate();
+
+  //test_curl();
+
+  after = mem_allocated();
+  printf("BEFORE: %d  AFTER: %d\n", before, after);
 
   printf("tests: %d,  failed: %d\n", __tests, __fails);
 
