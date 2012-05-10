@@ -1,12 +1,17 @@
-/******************************************************************************
- * Authors: Tolu Alabi
- *          Zach Butler
- *          Martin Dluhos
+/**
+ * @file
+ * @author Tolu Alabi
+ *         Zach Butler
+ *         Martin Dluhos
  *
- * Created: March 1, 2012
- * Description: Handle sending a certificate request to the website and
- *              receiving its response.
- ******************************************************************************/
+ * @date Created: March 1, 2012
+ *       Modified: May 6th, 2012
+ *
+ * @section DESCRIPTION
+ * Handle sending a certificate request to the website and
+ * receiving its response.
+ */
+
 #include "connection.h"
 #include "response.h"
 #include "certificate.h"
@@ -27,7 +32,12 @@ const char *unsupported_method_page =
 // Helpers
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-/* Extract the host which we need to verify from the requested url. */
+/**
+ * @brief Extract the host which we need to verify from the requested url. 
+ * @param url The url with which we want to connect
+ * @param host_to_verify The host we want to verify
+ * @return The host we need to verify 
+ */
 static host *
 extract_host (char *url, host *host_to_verify)
 {
@@ -39,15 +49,27 @@ extract_host (char *url, host *host_to_verify)
   host_to_verify->port = atol(strtok(NULL, " "));
 
   return host_to_verify;
-} // extract_host
+}// extract_host
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Functions
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-/* Handles the connection of a client. The address of this function needs to
- * be passed to MHD_start_daemon.
+/**
+ * @brief Handles the connection of a client. The address of this function needs to
+ *        be passed to MHD_start_daemon.
  *
+ * @param cls 
+ * @param connection
+ * @param url The url with which we are trying to connect
+ * @param method
+ * @param version
+ * @param upload_data 
+ * @param upload_data_size
+ * @param con_cls
+ *
+ * @return Returns MHD_YES if the a connection was made with the url, 
+ *         and MHD_NO if no connection could be made.
  */
 int
 answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
@@ -140,18 +162,46 @@ answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
           return send_response (connection, unsupported_method_page, con_info->answer_code);
         }
     }
-}
+}//answer_to_SSL_connection
 
 /* Clean up after the request completes closing the connection. Taken from the microhttpd tutorial 
    (Example 5).
  */
 
+/**
+ * @brief 
+ *
+ * @param cls
+ * @param connection
+ * @param url
+ * @param method
+ * @param version
+ * @param upload_data
+ * @param upload_data_size
+ * @param con_cls
+ *
+ * @return Returns 0.
+ */
 int answer_to_HTTP_connection(void *cls, struct MHD_Connection *connection,
     const char *url, const char *method,
     const char *version, const char *upload_data,
     size_t *upload_data_size, void **con_cls)
 { return 0; }
 
+/**
+ * @brief 
+ *
+ * @param cls
+ * @param connection
+ * @param url
+ * @param method
+ * @param version
+ * @param upload_data
+ * @param upload_data_size
+ * @param con_cls
+ *
+ * @return Returns 0.
+ */
 int answer_to_4242_connection(void *cls, struct MHD_Connection *connection,
     const char *url, const char *method,
     const char *version, const char *upload_data,
@@ -159,9 +209,14 @@ int answer_to_4242_connection(void *cls, struct MHD_Connection *connection,
 { return 0; }
 
 /**
- * This function is called by MHD_start_daemon when a request completes to
- * insure that memory for datastructures we create to store information 
- * about the connection are properly freed at the end.
+ * @brief This function is called by MHD_start_daemon when a request completes to
+ *        ensure that memory for datastructures we create to store information 
+ *        about the connection are properly freed at the end.
+ * 
+ * @param cls
+ * @param connection
+ * @param con_cls
+ * @param toe
  */
 void
 request_completed (void *cls, struct MHD_Connection *connection,

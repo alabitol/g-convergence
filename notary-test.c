@@ -1,10 +1,15 @@
-/*****************************************************************************
- * Authors: g-coders
+/**
+ * @file
+ * @author g-coders
+ *
+ * @date
  * Created: March 10, 2012
  * Revised: April 12, 2012
- * Description: This file includes unit tests for all functions which are part
+ *
+ * @section DESCRIPTION
+ * This file includes unit tests for all functions which are part
  * of the convergence system.
- ******************************************************************************/
+ */
 
 #include <malloc.h>
 #include <stdio.h>
@@ -12,6 +17,8 @@
 #include "connection.h"
 #include "certificate.h"
 #include "response.h"
+#include "cache.h"
+
 //header for detecting memory leaks
 #include <mcheck.h>
 
@@ -32,13 +39,14 @@ int __fails = 0;
 #define test(exp) do { ++__tests; if (! (exp)) { ++__fails; fprintf (stderr, "Test failed: %s at line: %d\n", #exp, __LINE__); } \
     {printf("Tests: %d  Failed: %d\n", __tests, __fails); } } while (0)
 
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Helpers
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 /**
- * Get information about the amount of dynamically allocated address space
- * in bytes.
+ * @brief Gets information about the amount of dynamically allocated address 
+          space in bytes
+ * @return Returns number of bytes of dynamically allocated space
  */
 static int
 mem_allocated ()
@@ -49,33 +57,37 @@ mem_allocated ()
 
 
 /**
- * Write Function: tell the curl functions where to write the data they
- * receive from a network
+ * @brief Tells the curl functions where to write the data they
+ *        receive from a network
  *
  * @param ptr a pointer to the location where the data will be stored
- * @param size,
- * @param nmemb, the size of the data written
+ * @param size The size of the data to be stored
+ * @param nmemb The size of the data written
  * @param stream
- * @return 
+ * @return  
  */
 static size_t write_function (void *ptr,  size_t  size,  size_t  nmemb,  void *stream)
 {
   (void) stream;
   (void) ptr;
   return size * nmemb;
-}
+} // write_function
 
 /**
- * Combines curl cleanup calls. 
+ * @brief Combines curl cleanup calls 
+ * @param curl_handle
  */
 static void curl_cleanup(CURL* curl_handle)
 {
   curl_easy_cleanup(curl_handle);
   curl_global_cleanup();
-}
+} // curl_cleanup
 
 /**
- *Helper to create a post request
+ * @brief Helper to create a post request
+ * @param url The url we want to connect to
+ * @param fingerprint The fingerprint we want to verify
+ * @return 
  */
 static CURL* create_post_request(char* url, char* fingerprint)
 {
@@ -98,10 +110,12 @@ static CURL* create_post_request(char* url, char* fingerprint)
   //free used memory
   free(host);
   return curl_handle;
-}
+} // create_post_request
 
 /**
- * Helper to create a GET request
+ * @brief Helper to create a GET request
+ * @param url The url we want to connect to
+ * @return 
  */
 static CURL* create_get_request(char* url)
 {
@@ -122,10 +136,12 @@ static CURL* create_get_request(char* url)
 
   free(host);
   return curl_handle;
-}
+} // create_get_request
 
 /**
- * Helper to create a CUSTOM request
+ * @brief Helper to create a CUSTOM request
+ * @param url The url we want to connect to
+ * @return 
  */
 static CURL* create_custom_request(char* url)
 {
@@ -146,9 +162,11 @@ static CURL* create_custom_request(char* url)
       
   free(host);
   return curl_handle;
-}
+} // create_custom_request
 
-/* Function that sends HTTP requests to a running MHD_Daemon. */
+/**
+ * @brief Sends HTTP requests to a running MHD_Daemon
+ */
 void
 send_curl_requests()
 {
@@ -201,12 +219,11 @@ send_curl_requests()
 } // send_curl_requests
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Unit tests for functions implemented in connection.c, certificate.c,
-// response.c, and cache.c.
+// Unit tests
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-/** 
- * Test the entire system. 
+/**
+ * @brief Tests the entire system 
  */
 void
 test_convergence ()
@@ -225,6 +242,24 @@ test_convergence ()
 
 } // test_convergence
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Tests for functions in connection.c.
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+/**
+ * @brief Tests the functions in connection.c
+ *
+ * @param cls
+ * @param connection
+ * @param url
+ * @param method
+ * @param version
+ * @param upload_data
+ * @param upload_data_size
+ * @param con_cls
+ *
+ * @return Returns MHD_YES if a connection was successfully created,
+ *         and returns MHD_NO if it was not.
+ */
 int
 test_answer_to_connection_helper (void *cls, struct MHD_Connection *connection,
                                   const char *url, const char *method,
@@ -294,6 +329,9 @@ test_answer_to_connection_helper (void *cls, struct MHD_Connection *connection,
   return MHD_YES;
 }
 
+/**
+ * @brief Tests the function answer_to_SSL_connection
+ */
 void 
 test_answer_to_connection ()
 {
@@ -329,6 +367,21 @@ test_answer_to_connection ()
 } // test_answer_to_connection
 
 
+/**
+ * @brief Tests the function request_completed_helper
+ *
+ * @param cls
+ * @param connection
+ * @param url
+ * @param method
+ * @param version
+ * @param upload_data
+ * @param upload_data_size
+ * @param con_cls
+ *
+ * @return Returns MHD_YES if a connection was successfully created,
+ *         and returns MHD_NO if it was not.
+ */
 int
 test_request_completed_helper(void *cls, struct MHD_Connection *connection,
                               const char *url, const char *method,
@@ -402,7 +455,9 @@ test_request_completed_helper(void *cls, struct MHD_Connection *connection,
   return MHD_YES;
 }
 
-
+/**
+ * @brief Tests the function request_completed
+ */
 void 
 test_request_completed ()
 { 
@@ -439,6 +494,51 @@ test_request_completed ()
 
 } // test_request_completed
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Tests for functions in response.c.
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+/**
+ * @brief Test the function generate_signature
+ */
+void
+test_generate_signature()
+{
+  unsigned int *signature_size = malloc (sizeof (unsigned int));
+  unsigned char *signature;
+  RSA *private_key;
+  FILE *key_file;
+  char *json_fingerprint_list = 
+    "{\n \
+    \t\"fingerprintList\":\n \
+\t[\n \
+\t {\n \
+\t \"timestamp\": {\"start\": \"1292636531\", \"finish\": \"1292754629\"},\n \
+\t \"fingerprint\": \"BF:E1:FE:03:10:E9:CB:DC:96:BF:3D:AA:6E:C6:03:E5:31:CD:A9:9C\"\n \
+\t }\n \
+\t],\n \
+}\n";
+
+  key_file = fopen("convergence.key", "r");
+  if (key_file == NULL)
+  {
+    fprintf(stderr, "Could not open convergence.key for reading.\n");
+  } // if
+  private_key = PEM_read_RSAPrivateKey(key_file, NULL, NULL, NULL);
+
+  /* Calculate the signature size and allocate space for it. */
+  *signature_size = (unsigned int) RSA_size(private_key);
+  signature = (unsigned char *) malloc (*signature_size);
+
+int ret_val = generate_signature((unsigned char *) json_fingerprint_list, signature, signature_size, private_key);
+
+  /* Test the return value. */
+  test(ret_val == 1);
+
+} // test_generate_signature
+
+/**
+ * @brief Tests the function retrieve_response
+ */
 void 
 test_retrieve_response ()
 {
@@ -560,6 +660,9 @@ test_retrieve_response ()
   free(coninfo_cls);
 } // test_retrieve_post_response
 
+/**
+ * @brief Tests the function verify_certificate
+ */
 void
 test_verify_certificate ()
 {
@@ -575,8 +678,14 @@ test_verify_certificate ()
   char *c8 = "C2:2A:30:8D:49:DE:49:32:3B:F1:AF:D9:F8:41:79:E6:A8:ED:65:A6";
   char *c9 = "03:47:7F:F5:F6:3B:F5:B6:10:C0:7D:65:9A:7B:A9:12:D3:20:83:68";
 
+  char *lower1 = "ea:9d:ef:d6:33:61:d9:76:71:e1:6c:68:9f:54:a6:59:d7:f1:0e:66";
+  char *lower2 = "45:24:40:53:4f:b4:7c:a6:c6:09:f4:b3:fa:de:6a:dd:21:56:35:ed";
+
   char *c10[1] = {c3};
   char *c11[1] = {c2};
+  char *c12[1] = {c5};
+  char *c13[4] = {c8, c2, c7, c5};
+
   char *no_match[5] = {c5, c6, c7, c8, c9};
   char *last_match[6] = {c5, c6, c7, c8, c9, c1};
   char *second_match[4] = {c5, c1, c6, c7};
@@ -605,10 +714,28 @@ test_verify_certificate ()
   test (result == 0);
 
   //Additional tests: lower case fingerprints 
- 
+  result = verify_certificate(lower1, c12, 1);
+  test (result == 1);
+
+  result = verify_certificate(lower2, c13, 4);
+  test (result == 1);
 } // test_verify_certificate
 
-
+/**
+ * @brief Tests the helper functions to send_response
+ *
+ * @param cls
+ * @param connection
+ * @param url
+ * @param method
+ * @param version
+ * @param upload_data
+ * @param upload_data_size
+ * @param con_cls
+ *
+ * @return Returns MHD_YES if a connection was successfully created,
+ *         and returns MHD_NO if it was not.
+ */
 int
 test_send_response_helper (void *cls, struct MHD_Connection *connection,
     const char *url, const char *method,
@@ -706,6 +833,9 @@ test_send_response_helper (void *cls, struct MHD_Connection *connection,
   return MHD_YES;
 } // test_send_response_helper
 
+/**
+ * @brief Tests the function send_response
+ */
 void 
 test_send_response ()
 {
@@ -781,6 +911,12 @@ test_send_response ()
   
 } // test_send_response
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Tests for functions in certificate.c.
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+/**
+ * @brief Tests the function request_certificate
+ */
 void 
 test_request_certificate ()
 {
@@ -879,6 +1015,9 @@ test_request_certificate ()
 } // test_request_certificate
 
 
+/**
+ * @brief Tests the function verify_fingerprint_format
+ */
 void
 test_verify_fingerprint_format ()
 {
@@ -956,26 +1095,235 @@ test_verify_fingerprint_format ()
   free(invalid_fpt);
 } // test_verify_fingerprint_format
 
-/* Cache will be added later as an extension. */
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Tests for functions in cache.c
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+/**
+ * @brief Tests the function is_fingerprint_safe
+ */ 
+void
+test_is_fingerprint_safe()
+{
+} // test_is_fingerprint_safe
+
+/**
+ * @brief Tests the function is_url_safe
+ */
+void
+test_is_url_safe()
+{
+  /* Try to insert malformed URLs into the cache. */
+  int index_of_last_char;
+  FILE *malformed_urls = fopen("malformed_urls.txt", "r");
+  int size = 250;
+  char input_line[size];
+  char *url;
+
+  if (malformed_urls == NULL)
+    {
+      fprintf(stderr, "Could not open malformed_urls.txt.\n");
+      exit(1);
+    }
+
+  /* Read in malformed urls from a file. */
+  while (fgets (input_line, size, malformed_urls) != NULL)
+    {
+      //First get rid of the newline character at the end of each line in the file
+      index_of_last_char = strlen(input_line) - 1;
+      if(input_line[index_of_last_char] == '\n')
+        input_line[index_of_last_char] = '\0';
+
+      url = strtok(input_line, "\n");
+
+      test(is_url_safe(url) == 0);
+    } // while
+} // test_is_url_safe
+
+
+/**
+ * @brief Tests the functions is_in_cache and cache_insert.
+ */
 void
 test_is_in_cache ()
 {
+  int index_of_last_char;
+  MYSQL *connection = start_mysql_connection();
+  FILE *valid_urls = fopen("valid_urls.txt", "r");
+  FILE *invalid_fpts = fopen("invalid_fpts.txt", "r");
+  int size = 250;
+  char input_line[size];
+  char *url, *fingerprint, *non_fingerprint;
+
+  if (valid_urls == NULL)
+    {
+      fprintf(stderr, "Could not open valid_urls.txt.\n");
+      exit(1);
+    }
+
+  /* Read in (fingerprint, url) pairs for testing.*/
+  while (fgets (input_line, size, valid_urls) != NULL)
+    {
+      //First get rid of the newline character at the end of each line in the file
+      index_of_last_char = strlen(input_line) - 1;
+      if(input_line[index_of_last_char] == '\n')
+        input_line[index_of_last_char] = '\0';
+
+      url = strtok(input_line, " ");
+      fingerprint = strtok(NULL, " ");
+
+      /* Test Case 1 */
+      /* Insert (fingerprint, url) pairs into trusted db. */
+      cache_insert(url, fingerprint, CACHE_TRUSTED);
+
+      /* Retrieve inserted (fingerprint, url) pairs from trusted db. */
+      test(is_in_cache(url, fingerprint) == 1);
+
+
+      /* Test Case 2 */
+      /* Insert (fingerprint, url) pairs into blacklisted db. */
+      cache_insert(url, fingerprint, CACHE_BLACKLIST);
+
+      /* Retrieve inserted (fingerprint, url) pairs from blacklisted db. */
+      test(is_in_cache(url, fingerprint) == 0);
+    } // while
+  
+  if (invalid_fpts == NULL)
+    {
+      fprintf(stderr, "Could not open invalid_fpts.txt.\n");
+      exit(1);
+    }
+
+  close_mysql_connection(conn);
 } // test_verify_certificate
 
+/**
+ * @brief Tests the function is_blacklisted
+ */
+void
+test_is_blacklisted()
+{
+  MYSQL *connection = start_mysql_connection();
+
+
+  /* Read in (fingerprint, url) pairs for testing.*/
+  while (fgets (input_line, size, invalid_fpts) != NULL)
+    {
+      //First get rid of the newline character at the end of each line in the file
+      index_of_last_char = strlen(input_line) - 1;
+      if(input_line[index_of_last_char] == '\n')
+        input_line[index_of_last_char] = '\0';
+
+      url = strtok(input_line, " ");
+      non_fingerprint = strtok(NULL, " ");
+
+      /* Test Case 3 */
+      /* Attempt to retrieve nonexistent (fingerprint, url) pairs. */
+      test(is_in_cache(url, non_fingerprint) == 0);
+    } // while
+
+  close_mysql_connection(connection);
+} // test_verify_certificate
+
+/**
+ * @brief Tests the function cache_remove
+ */
 void
 test_cache_remove ()
 {
+  MYSQL *connection = start_mysql_connection();
+  int index_of_last_char;
+  FILE *valid_urls = fopen("valid_urls.txt", "r");
+  int size = 250;
+  char input_line[size];
+  char *url, *fingerprint;
+
+  if (valid_urls == NULL)
+    {
+      fprintf(stderr, "Could not open valid_urls.txt.\n");
+      exit(1);
+    }
+
+  /* Read in (fingerprint, url) pairs for testing.*/
+  while (fgets (input_line, size, valid_urls) != NULL)
+    {
+      //First get rid of the newline character at the end of each line in the file
+      index_of_last_char = strlen(input_line) - 1;
+      if(input_line[index_of_last_char] == '\n')
+        input_line[index_of_last_char] = '\0';
+
+      url = strtok(input_line, " ");
+      fingerprint = strtok(NULL, " ");
+
+
+      /* Test Case 1 */
+      /* Insert (url, fingerprint) pair into trusted cache, remove it, and
+         verify that it does not exist there anymore. */
+      cache_insert(url, fingerprint, CACHE_TRUSTED);
+      test(cache_remove(fingerprint, CACHE_TRUSTED) == 1);
+      test(is_in_cache(url, fingerprint) == 0);
+
+      /* Test Case 2 */
+      /* Insert (url, fingerprint) pair into blacklisted cache, remove it, and
+         verify that it does not exist there anymore. */
+      cache_insert(url, fingerprint, CACHE_BLACKLIST);
+      test(cache_remove(fingerprint, CACHE_BLACKLIST) == 1);
+      test(is_in_cache(url, fingerprint) == 0);
+
+      /* Test Case 3 */
+      /* Attempt to remove a fingerprint that is not present in the cache. */
+      test(cache_remove(fingerprint, CACHE_TRUSTED) == -1);
+      test(cache_remove(fingerprint, CACHE_BLACKLIST) == -1);
+    } // while
+  
+  close_mysql_connection(connection);
 } // test_cache_remove
 
+/**
+ * @brief Tests the function cache_update
+ */
 void 
-test_cache_insert ()
+test_cache_update_url ()
 {
-} // test_cache_insert
+  MYSQL *connection = start_mysql_connection();
+  int index_of_last_char;
+  FILE *valid_urls = fopen("valid_urls.txt", "r");
+  int size = 250;
+  char input_line[size];
+  char *url, *fingerprint;
 
-void 
-test_cache_update ()
-{
-} // test_cache_update
+  if (valid_urls == NULL)
+    {
+      fprintf(stderr, "Could not open valid_urls.txt.\n");
+      exit(1);
+    }
+
+  /* Read in (fingerprint, url) pairs for testing.*/
+  while (fgets (input_line, size, valid_urls) != NULL)
+    {
+      //First get rid of the newline character at the end of each line in the file
+      index_of_last_char = strlen(input_line) - 1;
+      if(input_line[index_of_last_char] == '\n')
+        input_line[index_of_last_char] = '\0';
+
+      url = strtok(input_line, " ");
+      fingerprint = strtok(NULL, " ");
+
+      /* Test Case 1 */
+      /* Remove (url, fingerprint) pair from trusted db. */
+      cache_insert(url, fingerprint, CACHE_TRUSTED);
+      test(cache_update_url(url, fingerprint) == 1);
+      test(is_in_cache(url, fingerprint) == 0);
+
+      /* Test Case 2 */
+      /* Remove (url, fingerprint) pair which does not exist in trusted
+         db. */
+      test(cache_update_url(url, fingerprint) == 0);
+    } // while
+
+  close_mysql_connection(connection);
+} // test_cache_update_url
+
 
 void
 test_curl ()
@@ -995,9 +1343,15 @@ test_curl ()
 }
 
 
+/**
+ * @brief Runs the tests and prints the results
+ * @param argc The number of command-line arguments
+ * @param argv The command-line arguments
+ * @return Returns 0
+ */
 int
 main (int argc, char *argv[])
-{
+  {
   /* Variables to keep track of allocated memory. */
   int before, after;
 
@@ -1008,7 +1362,11 @@ main (int argc, char *argv[])
   //test_answer_to_connection();
 
   /* Check if the system is leaking memory. */
-  test_request_completed ();
+  before = mem_allocated();
+  //test_request_completed ();
+  after = mem_allocated();
+  //test(before==after);
+  //test_generate_signature();
   //test_retrieve_response ();
   //test_send_response ();
   //test_request_certificate ();
@@ -1021,8 +1379,9 @@ main (int argc, char *argv[])
 
   //test_curl();
 
-  after = mem_allocated();
   printf("BEFORE: %d  AFTER: %d\n", before, after);
+  //test_cache_update_url ();
+  // test_verify_certificate();
 
   printf("tests: %d,  failed: %d\n", __tests, __fails);
 

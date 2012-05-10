@@ -1,7 +1,7 @@
 /******************************************************************************
  * Authors: g-coders
  * Created: March 4, 2012
- * Revised: April 11, 2012
+ * Revised: May 2, 2012
  * Description: This file contains functions which format the verification
  * response and functions which send the response back to the client.
  ******************************************************************************/
@@ -10,6 +10,14 @@
 #define RESPONSE_H
 
 #include "notary.h"
+
+/**
+ * Generates a signature of a list of fingerprints using the notary's private
+ * key.
+ */
+int
+generate_signature(unsigned char *fingerprint_list, unsigned char *signature,
+                   unsigned int *signature_size, RSA *private_key);
 
 /* Obtains a response to a POST/GET request. */
 int retrieve_response (void *coninfo_cls, host *host_to_verify, const char *fingerprint_from_client);

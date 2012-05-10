@@ -32,11 +32,17 @@
 #include <ctype.h>
 
 
+/* Global variables representing the locations of the key file and
+ * certificate file */
+char *keyfile, *certfile;
 /* The number of simultaneous requests. */
 #define MAX_CLIENTS 15
 #define POST_BUFFER_SIZE 512
 
 #define PORT 8888
+
+char *key_filename;
+char *certificate_file;
 
 /* GET and POST are the only requests notary handles. */
 enum connection_type
