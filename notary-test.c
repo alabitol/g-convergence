@@ -98,7 +98,7 @@ static CURL* create_post_request(char* url, char* fingerprint)
   curl_global_init(CURL_GLOBAL_ALL);
   curl_handle = curl_easy_init();
 
-  char *host = malloc(strlen(url) * sizeof(char));
+  char *host = malloc( (strlen(url) + 1) * sizeof(char));
   strcpy(host, url);
 
   curl_easy_setopt(curl_handle, CURLOPT_URL, host);
@@ -106,7 +106,7 @@ static CURL* create_post_request(char* url, char* fingerprint)
   curl_easy_setopt(curl_handle, CURLOPT_POST, 1L);
   curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, fingerprint);
   curl_easy_setopt(curl_handle, CURLOPT_HEADER, 1L);
-      
+  
   //free used memory
   free(host);
   return curl_handle;
@@ -126,7 +126,7 @@ static CURL* create_get_request(char* url)
   curl_global_init(CURL_GLOBAL_ALL);
   curl_handle = curl_easy_init();
 
-  char *host = malloc(strlen(url) * sizeof(char));
+  char *host = malloc( (strlen(url) + 1) * sizeof(char));
   strcpy(host, url);
 
   curl_easy_setopt(curl_handle, CURLOPT_URL, host);
@@ -152,7 +152,7 @@ static CURL* create_custom_request(char* url)
   curl_global_init(CURL_GLOBAL_ALL);
   curl_handle = curl_easy_init();
 
-  char *host = malloc(strlen(url) * sizeof(char));
+  char *host = malloc( (strlen(url) + 1) * sizeof(char));
   strcpy(host, url);
 
   curl_easy_setopt(curl_handle, CURLOPT_URL, host);
@@ -170,7 +170,7 @@ static CURL* create_custom_request(char* url)
 void
 send_curl_requests()
 {
-  int connection_type[NUM_OF_CONNECTIONS] = {GET, POST, CUSTOM, POST, GET, CUSTOM, POST, POST, GET, GET};
+  int connection_type[NUM_OF_CONNECTIONS] = {GET, POST, CUSTOM, POST, GET, CUSTOM, POST, GET, POST, GET};
 
   /* Send requests to the daemon with curl. */
   CURL* curl;
@@ -227,18 +227,137 @@ send_curl_requests()
  */
 void
 test_convergence ()
-{
-  /* STUB */
+{  
+  FILE *valids;
+  int max_len = 256;
+  char string_read[max_len];
+  char* method;
+  char *url;
+  char* correct_fingerprint;
+  int index_of_last_char;
+
+  host *host_to_verify = malloc (sizeof(host));
+  /* Send requests to the daemon with curl. */
+  CURL* curl;
+  CURLcode res;
 
   /* Start the daemon. */
+  int ssl_port = 7000;
+  struct MHD_Daemon *ssl_daemon;
 
-  /* Create a curl request. */
+  /* To test answer_to_connection, we need MHD_Connection, which is one of its
+   * arguments. To obtain MHD_Connection, we start the MHD_Daemon, make a
+   * request to it using curl, and instruct the daemon to call
+   answer_to_connection for testing
+  */
+  ssl_daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION, 
+                                 ssl_port, 
+                                 NULL, 
+                                 NULL, 
+                                 &answer_to_SSL_connection,
+                                 NULL,
+                                 MHD_OPTION_NOTIFY_COMPLETED, 
+                                 request_completed,
+                                 NULL, 
+                                 MHD_OPTION_END
+                                 );
 
-  /* Set the appropriate request parameters. */
+  if (ssl_daemon == NULL)
+    {
+      fprintf (stderr, "Error: Failed to start the MHD SSL daemon.\n");
+    }
+  else // for debugging
+    {
+      printf("The daemon is up and running!\n");
+    }
 
-  /* Send the request. */
-  
-  /* Check the return value and record test results. */
+  //Set the port to connect to  
+  host_to_verify->port = 443;
+
+  //open the file to read url(s) and fingerprints from
+  valids = fopen ("url_fingerprint_pairs.txt", "r");
+  if (valids == NULL)
+    {
+      fprintf (stderr, "Could not open url_fingerprint_pairs.txt\n");
+      exit(1);
+    }
+
+  /* Read valid urls from a file and retrieve a certificate from each. */
+  while (fgets (string_read, max_len, valids) != NULL)
+    {
+      //First get rid of the newline character at the end of each line in the file
+      index_of_last_char = strlen(string_read) - 1;
+      if( string_read[index_of_last_char] == '\n')
+        string_read[index_of_last_char] = '\0';
+
+      //get the method for each request
+      method = strtok(string_read, "' '");
+      //get the url from the string gotten from the file and construct host
+      url = strtok(NULL, "' '");
+      host_to_verify->url = url;
+
+      //then get the fingerprint
+      correct_fingerprint = strtok(NULL, "' '");      
+
+      //create a curl request based on the method type
+      if(strcmp(method, "POST") == 0)
+        {
+          curl = create_post_request(url, correct_fingerprint);
+        }
+      else
+        {
+          if(strcmp(method, "GET") == 0)
+            {
+              curl = create_get_request(url);
+            }
+          else
+            {
+              curl = create_custom_request(url);
+            }
+        }
+
+      /* Set curl options. */
+      if (curl)
+        {
+          /* Make the curl request. */
+          res = curl_easy_perform(curl);
+
+          if (!res)
+            {
+              //Get and Test the answer code returned
+              long int response = 0;
+              curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response);
+
+              if(strcmp(method, "CUSTOM") == 0)
+                {
+                  test(response == 400);
+                }
+              else
+                {
+                  test(response == 200);
+                }
+
+              /* Verify if the response was received by the client. */
+              curl_cleanup(curl);
+            }
+          else
+            {
+              /* Curl did not succeed in sending the request. */
+              fprintf(stderr, "Could not send request to server\n");
+              curl_cleanup(curl);
+            } // if (!res)
+        }
+      else
+        {
+          fprintf(stderr, "Could not initialize CURL\n");
+          curl_cleanup(curl);
+        } // if (curl)
+    }
+
+  MHD_stop_daemon(ssl_daemon);
+
+  fclose(valids);
+  free(host_to_verify);
 
 } // test_convergence
 
@@ -288,6 +407,7 @@ test_answer_to_connection_helper (void *cls, struct MHD_Connection *connection,
           *upload_data_size = 0;
           con_info->connection_type = GET;
         }
+
       *con_cls = (void *) con_info;
       return MHD_YES;
     } // if
@@ -1153,7 +1273,7 @@ test_is_in_cache ()
   FILE *invalid_fpts = fopen("invalid_fpts.txt", "r");
   int size = 250;
   char input_line[size];
-  char *url, *fingerprint, *non_fingerprint;
+  char *url, *fingerprint;
 
   if (valid_urls == NULL)
     {
@@ -1194,7 +1314,7 @@ test_is_in_cache ()
       exit(1);
     }
 
-  close_mysql_connection(conn);
+  close_mysql_connection(connection);
 } // test_verify_certificate
 
 /**
@@ -1204,7 +1324,11 @@ void
 test_is_blacklisted()
 {
   MYSQL *connection = start_mysql_connection();
-
+  int index_of_last_char;
+  FILE *invalid_fpts = fopen("invalid_fpts.txt", "r");
+  int size = 250;
+  char input_line[size];
+  char *url, *non_fingerprint;
 
   /* Read in (fingerprint, url) pairs for testing.*/
   while (fgets (input_line, size, invalid_fpts) != NULL)
@@ -1329,6 +1453,7 @@ void
 test_curl ()
 { 
   CURL* curl_handle;
+  // CURLcode res;
 
   /* Initialize curl. */
   curl_global_init(CURL_GLOBAL_ALL);
@@ -1337,6 +1462,8 @@ test_curl ()
   curl_easy_setopt(curl_handle, CURLOPT_URL, "http://www.tolu.com");
   curl_easy_setopt(curl_handle, CURLOPT_POST, 1L);
   curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, "FDHDRHFZHFDHDZFHDFHDFZHDFHDZHDG");
+
+  //res = curl_easy_perform(curl_handle);
 
   curl_easy_cleanup(curl_handle);
   curl_global_cleanup();
@@ -1358,13 +1485,11 @@ main (int argc, char *argv[])
   mtrace();
   before = mem_allocated();
   /* Test all functions here. */
-  //test_convergence ();
+  test_convergence ();
   //test_answer_to_connection();
 
   /* Check if the system is leaking memory. */
-  before = mem_allocated();
   //test_request_completed ();
-  after = mem_allocated();
   //test(before==after);
   //test_generate_signature();
   //test_retrieve_response ();
@@ -1378,6 +1503,7 @@ main (int argc, char *argv[])
   //test_verify_certificate();
 
   //test_curl();
+  after = mem_allocated();
 
   printf("BEFORE: %d  AFTER: %d\n", before, after);
   //test_cache_update_url ();

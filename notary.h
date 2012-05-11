@@ -9,6 +9,8 @@
 #ifndef NOTARY_H
 #define NOTARY_H
 
+#define _GNU_SOURCE
+
 #include <stdint.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -69,7 +71,8 @@ typedef struct
   long port;
 } host;
 
-/* Length of certificate fingerprints we are dealing with. */
+/* Length of certificate fingerprints we are dealing with including the
+   trailing null character */
 #define FPT_LENGTH 60
 
 #endif // NOTARY_H

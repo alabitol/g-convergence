@@ -15,9 +15,9 @@
  */
 int
 answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
-    const char *url, const char *method,
-    const char *version, const char *upload_data,
-    size_t *upload_data_size, void **con_cls);
+                          const char *url, const char *method,
+                          const char *version, const char *upload_data,
+                          size_t *upload_data_size, void **con_cls);
 
 /* Clean up after the request completes closing the connection. Taken from 
  * the microhttpd tutorial 
@@ -25,20 +25,20 @@ answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
  */
 int
 answer_to_HTTP_connection (void *cls, struct MHD_Connection *connection,
-    const char *url, const char *method,
-    const char *version, const char *upload_data,
-    size_t *upload_data_size, void **con_cls);
+                           const char *url, const char *method,
+                           const char *version, const char *upload_data,
+                           size_t *upload_data_size, void **con_cls);
 
 int
 answer_to_4242_connection (void *cls, struct MHD_Connection *connection,
-    const char *url, const char *method,
-    const char *version, const char *upload_data,
-    size_t *upload_data_size, void **con_cls);
+                           const char *url, const char *method,
+                           const char *version, const char *upload_data,
+                           size_t *upload_data_size, void **con_cls);
 
 /* Clean up after the request completes. 
  */
 void
 request_completed (void *cls, struct MHD_Connection *connection,
-    void **con_cls, enum MHD_RequestTerminationCode toe);
+                   void **con_cls, enum MHD_RequestTerminationCode toe);
 
 #endif // CONNECTION_H

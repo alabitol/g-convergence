@@ -228,16 +228,16 @@ int cache_remove (char* fingerprint, int db)
 /* Removes cache entries that have expired from trusted cache. 
  * @return 1 on success, 0 on failure
  */
-int cache_update_url (char *url, char **fingerprints)
+int cache_update_url (char *url, char *fingerprints)
 {
   MYSQL *conn = start_mysql_connection();
-  int return_val1, return_value2;
+  int return_value1, return_value2;
   
   return_value1 =
     mysql_query(conn, "DELETE FROM trusted(fingerprint)");
-  return_val2 = mysql_query(conn, "SELECT * FROM trusted WHERE timestamp < ");
+  return_value2 = mysql_query(conn, "SELECT * FROM trusted WHERE timestamp < ");
 
   close_mysql_connection(conn);
 
-  return !(return_value1 || return_value2)
+  return !(return_value1 || return_value2);
 } //cache_update

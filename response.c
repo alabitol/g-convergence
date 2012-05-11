@@ -33,7 +33,7 @@
 void
 set_answer_string(struct connection_info_struct* connection_info, char* answer_string)
 {  
-  connection_info->answer_string = malloc(sizeof(char) * strlen(answer_string + 1));
+  connection_info->answer_string = malloc(sizeof(char) * (strlen(answer_string) + 1) );
   strcpy((char*)connection_info->answer_string, answer_string);
 }
 
@@ -94,7 +94,7 @@ retrieve_response (void *coninfo_cls, host *host_to_verify, const char *fingerpr
   //create space for the fingerprints
   int i;
   for(i=0; i<MAX_NO_OF_CERTS; i++)
-    fingerprints_from_website[i] = calloc(sizeof(char) * FPT_LENGTH, 1);
+    fingerprints_from_website[i] = calloc(FPT_LENGTH, sizeof(char));
 
   //get the fingerprints
   start_time = time(NULL);
@@ -145,13 +145,13 @@ retrieve_response (void *coninfo_cls, host *host_to_verify, const char *fingerpr
 }\n", start_time, end_time, fingerprints_from_website[0]);
 
    /* Get the RSA private key from a file. */
-  private_key = PEM_read_RSAPrivateKey(key_file, NULL, NULL, NULL);
+  //private_key = PEM_read_RSAPrivateKey(key_file, NULL, NULL, NULL);
 
   /* Calculate the signature size and allocate space for it. */
-  *signature_size = RSA_size(private_key);
-  signature = (unsigned char *) malloc (*signature_size);
+  //*signature_size = RSA_size(private_key);
+  //signature = (unsigned char *) malloc (*signature_size);
 
-  generate_signature((unsigned char *) json_fingerprint_list, signature, signature_size, private_key);
+  //generate_signature((unsigned char *) json_fingerprint_list, signature, signature_size, private_key);
 
   set_answer_string(con_info, json_fingerprint_list);
   

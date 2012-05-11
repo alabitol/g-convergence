@@ -17,14 +17,16 @@
 #include "certificate.h"
 #include "notary.h"
 
+#define MAX_HOST_LEN 10
+
 /* Keep track of the number of clients with active requests. */
 unsigned int number_active_clients = 0;
 
 /* Response strings for the server to return. */
-const char *busy_page = 
+const char busy_page[] = 
   "The server is too busy to handle the verification request.\n";
 
-const char *unsupported_method_page = 
+const char unsupported_method_page[] = 
   "The server received a request with an unsupported method.\n";
 
 
@@ -33,22 +35,29 @@ const char *unsupported_method_page =
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 /**
- * @brief Extract the host which we need to verify from the requested url. 
- * @param url The url with which we want to connect
- * @param host_to_verify The host we want to verify
- * @return The host we need to verify 
+ * @brief Extract the actual url and the host from the input string
+ * @param url string of the form "/target/https://www..."
+ * @param host_to_verify A struct which serves as an output parameter 
+ *        containing the url and the host to connect to
  */
-static host *
+static void
 extract_host (char *url, host *host_to_verify)
 {
-  //set the url to point to the beggining of the actual website address
-  url = url + 8;
+  char *actual_url = malloc(sizeof(char) * (strlen(url) + 1) );
+  char host[MAX_HOST_LEN];
 
-  /* Extract the host and port from the url. */
-  host_to_verify->url = strtok(url, " ");
-  host_to_verify->port = atol(strtok(NULL, " "));
+  //Get the url and the host from the input string
+  sscanf(url, "/target/%99[^ ] %99[^\n]", actual_url, host);
 
-  return host_to_verify;
+  //set the fields in host_to_verify
+  host_to_verify->url = malloc(sizeof(char) * (strlen(actual_url) + 1) );
+  strcpy(host_to_verify->url, actual_url);
+
+  host_to_verify->port = atol(host);
+
+  //free used memory
+  free(actual_url);
+
 }// extract_host
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -73,14 +82,14 @@ extract_host (char *url, host *host_to_verify)
  */
 int
 answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
-    const char *url, const char *method,
-    const char *version, const char *upload_data,
-    size_t *upload_data_size, void **con_cls)
+                          const char *url, const char *method,
+                          const char *version, const char *upload_data,
+                          size_t *upload_data_size, void **con_cls)
 {
   host *host_to_verify = malloc(sizeof(host)); // website the user wants to verify
 
   /* Url to be parsed cannot be a constant string. */
-  char *requested_url = malloc(sizeof(char) * strlen(url));
+  char *requested_url = malloc(sizeof(char) * ( strlen(url) + 1) );
   strcpy(requested_url,url);
 
   /* The first time the function is called, only headers are processed. */
@@ -97,8 +106,7 @@ answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
     if (con_info == NULL)
       return MHD_NO;
 
-    /* Process POST and GET request separately. Signal an error on any other
-     * method.
+    /* Process POST and GET request separately. 
      */
     if  (strcmp (method, "POST") == 0)
       con_info->connection_type = POST;
@@ -122,6 +130,7 @@ answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
       retrieve_response(con_info, host_to_verify, upload_data);
       *upload_data_size = 0;
 
+      free(host_to_verify->url);
       free(host_to_verify);
       free(requested_url);
 
@@ -129,7 +138,7 @@ answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
     }
     else
       {
-        /* Retrieve response attributes from con_info to send a response. */
+        /* Send response of the POST request to the client */
         return send_response (connection, con_info->answer_string,
                               con_info->answer_code);
       }
@@ -143,17 +152,22 @@ answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
           extract_host(requested_url, host_to_verify);
           /* If the fingerprint is not included in the request, call the method retrieve_response 
              without a fingerprint from the client */
-          retrieve_response(con_info, host_to_verify, NULL);
-          
+          retrieve_response(con_info, host_to_verify, NULL);   
+
+          free(host_to_verify->url);
           free(host_to_verify);
           free(requested_url);
 
-          /* We probably want to call get_response here as well. Hmmm... */
+          /* We send the response of the GET request to the client*/
           return send_response (connection, con_info->answer_string, con_info->answer_code);
         }
       else
         { 
           struct connection_info_struct *con_info = *con_cls;
+
+          //free used memory
+          free(host_to_verify);
+          free(requested_url);
 
           /* We received a request with unsupported method, so we return the
            * appropriate error code. 
