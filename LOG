@@ -94,3 +94,12 @@ configuration process.
 Tolu and Martin have finished implementing test_send_response, which now
 verifies that send response functions appropriately in 4 different client
 requests.
+
+In MySQL database convergence, which Dr. Stone set up on babbage I created
+tables trusted and blacklisted for our notary system using the following commands:
+
+mysql> create table trusted(url VARCHAR(255) NOT NULL, fingerprint VARCHAR(60)
+NOT NULL, timestamp TIMESTAMP, PRIMARY KEY (url));
+
+mysql> create table blacklisted (url VARCHAR(255) NOT NULL, timestamp
+TIMESTAMP, PRIMARY KEY (url));

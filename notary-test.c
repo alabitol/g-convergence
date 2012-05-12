@@ -1476,11 +1476,22 @@ test_curl ()
  * @param argv The command-line arguments
  * @return Returns 0
  */
+void
+mem_leak_check()
+{
+  CURL *curl_handle;
+  curl_global_init(CURL_GLOBAL_ALL);
+  curl_handle = curl_easy_init();
+  curl_easy_cleanup(curl_handle);
+  curl_global_cleanup();
+} // mem_leak_check
+
 int
 main (int argc, char *argv[])
-  {
+{
+  mem_leak_check();
   /* Variables to keep track of allocated memory. */
-  int before, after;
+  //int before, after;
 
   mtrace();
   before = mem_allocated();
@@ -1490,6 +1501,9 @@ main (int argc, char *argv[])
 
   /* Check if the system is leaking memory. */
   //test_request_completed ();
+  //before = mem_allocated();
+  //test_request_completed ();
+  //after = mem_allocated();
   //test(before==after);
   //test_generate_signature();
   //test_retrieve_response ();
