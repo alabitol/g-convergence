@@ -185,8 +185,9 @@ request_certificate (host *host_to_verify, char** fingerprints)
       res = curl_easy_getinfo(curl, CURLINFO_CERTINFO, &ci);
       number_of_certs = ci->num_of_certs;
 
-      //array to store the retrieved certificates
-      char* certificates[number_of_certs];
+      //allocate memory for the array to store the retrieved certificates
+      char** certificates;
+      certificates = (char**)calloc(number_of_certs, sizeof *certificates);
 
       int i;
       if((!res) && ci)

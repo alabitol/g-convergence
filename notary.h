@@ -73,6 +73,6 @@ typedef struct
 
 /* Length of certificate fingerprints we are dealing with including the
    trailing null character */
-#define FPT_LENGTH 60
+#define FPT_LENGTH (59+1)
 
 #endif // NOTARY_H

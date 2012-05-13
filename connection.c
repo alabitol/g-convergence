@@ -127,7 +127,15 @@ answer_to_SSL_connection (void *cls, struct MHD_Connection *connection,
     if (*upload_data_size != 0)
     {
       extract_host(requested_url, host_to_verify);
-      retrieve_response(con_info, host_to_verify, upload_data);
+
+      if(verify_fingerprint_format(upload_data) == 1)
+        retrieve_response(con_info, host_to_verify, upload_data);
+      else
+        {
+          fprintf(stderr, "Incorrect fingerprint format\n");
+          exit(1);
+        }
+
       *upload_data_size = 0;
 
       free(host_to_verify->url);

@@ -297,12 +297,16 @@ test_convergence ()
       host_to_verify->url = url;
 
       //then get the fingerprint
-      correct_fingerprint = strtok(NULL, "' '");      
+      correct_fingerprint = strtok(NULL, "'\n'");
+
+      char* fingerprint = malloc(sizeof(char) * (strlen(correct_fingerprint) + 1) );
+      strncpy(fingerprint, correct_fingerprint, 59);
+      fingerprint[59] = '\0';
 
       //create a curl request based on the method type
-      if(strcmp(method, "POST") == 0)
+      if( (strcmp(method, "POST") == 0) || (strcmp(method, "BADPOST") == 0))
         {
-          curl = create_post_request(url, correct_fingerprint);
+          curl = create_post_request(url, fingerprint);
         }
       else
         {
@@ -334,7 +338,14 @@ test_convergence ()
                 }
               else
                 {
-                  test(response == 200);
+                  if(strcmp(method, "BADPOST") == 0)
+                    {
+                      test(response == 409);
+                    }
+                  else
+                    {
+                      test(response == 200);
+                    }
                 }
 
               /* Verify if the response was received by the client. */

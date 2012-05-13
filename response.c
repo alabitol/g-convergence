@@ -144,14 +144,14 @@ retrieve_response (void *coninfo_cls, host *host_to_verify, const char *fingerpr
 \t]\n\
 }\n", start_time, end_time, fingerprints_from_website[0]);
 
-   /* Get the RSA private key from a file. */
-  //private_key = PEM_read_RSAPrivateKey(key_file, NULL, NULL, NULL);
+  /* /\* Get the RSA private key from a file. *\/ */
+  /* private_key = PEM_read_RSAPrivateKey(key_file, NULL, NULL, NULL); */
 
-  /* Calculate the signature size and allocate space for it. */
-  //*signature_size = RSA_size(private_key);
-  //signature = (unsigned char *) malloc (*signature_size);
+  /* //Calculate the signature size and allocate space for it. */
+  /* signature_size = RSA_size(private_key); */
+  /* signature = (unsigned char *) malloc (*signature_size); */
 
-  //generate_signature((unsigned char *) json_fingerprint_list, signature, signature_size, private_key);
+  /* /\* generate_signature((unsigned char *) json_fingerprint_list, signature, signature_size, private_key); *\/ */
 
   set_answer_string(con_info, json_fingerprint_list);
   
