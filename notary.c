@@ -121,8 +121,6 @@ int main (int argc, char *argv[])
   int ssl_port = 443;
   char* ip;
   ip = set_default_notary_option("");
-  certificate_file = set_default_notary_option("./convergence.pem");
-  key_filename = set_default_notary_option("./convergence.key");
   char *username;
   username = set_default_notary_option("nobody");
   char *group;
@@ -133,6 +131,9 @@ int main (int argc, char *argv[])
   char c;
   opterr = 0;
   
+  /* Set keyfile and certfile */
+  set_key_and_cert_files();
+
   while ((c = getopt (argc, argv, "p:s:i:c:k:u:g:df")) != -1)
     {
       switch (c)
@@ -147,11 +148,11 @@ int main (int argc, char *argv[])
           set_notary_option (ip, optarg);
           break;
         case 'c':
-          set_notary_option (certificate_file, optarg);
+          set_notary_option (certfile, optarg);
           break;
         case 'k':
           printf("%s\n", optarg);
-          set_notary_option (key_filename, optarg);
+          set_notary_option (keyfile, optarg);
           break;
         case 'u':
           set_notary_option (username, optarg);
@@ -176,8 +177,7 @@ int main (int argc, char *argv[])
   /* Find a logging c library. */
   initiate_logging ();
 
-  /* Set keyfile and certfile */
-  set_key_and_cert_files();
+
   /* Make sure we can start the daemon in the background. */
 
   /* Start the MHD daemons to listen for client requests. 

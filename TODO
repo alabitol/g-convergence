@@ -8,15 +8,13 @@ Next steps:
 
 notary.c:
 
-* Compute a message digest from fingerprint_list using SHA-1 and sign it with
-  the private key.
-* Fix memory leaks
-* Write integration tests for the notary system.
-* Include an integration test where the notary is running on a different
-  machine
-* Write unit tests for functions in cache.c.
+* walk through cache functions, fix regex, implement Stone's comments in
+  cache.c
+* is_url_safe()
+* test cache functions
+* Integrate cache functions into the system.
+* Test the case when the notary is running on a different machine
 * Perform fuzz testing- test for receiving random data in requests
-* Convert the project to Doxygen documentation format.
 
 The plan:
 

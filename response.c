@@ -84,7 +84,7 @@ retrieve_response (void *coninfo_cls, host *host_to_verify, const char *fingerpr
   unsigned int *signature_size = NULL;
   unsigned char *signature;
   RSA *private_key;
-  FILE *key_file = fopen(key_filename, "r");
+  FILE *key_file = fopen(keyfile, "r");
 
   struct connection_info_struct *con_info = coninfo_cls;
 
